@@ -11,6 +11,7 @@ require 'time'
 require 'ri_cal'
 require 'time_start_and_end_extensions'
 require 'weeknote'
+require 'local_config'
 
 start_of_last_week = (Time.now.start_of_work_week-1.day).start_of_work_week
 end_of_last_week = start_of_last_week.end_of_work_week
@@ -48,8 +49,7 @@ end
 #
 # Add IRC weeknotes
 #
-irc_logfile = "/home/adrian/.rbot/logs/\#doesliverpool"
-irc_weeknotes = `grep -i \#weeknotes #{irc_logfile}`
+irc_weeknotes = `grep -i \#weeknotes #{IRC_LOGFILE}`
 irc_weeknotes.split("\n").each do |wn|
   wn_info = wn.match(/\[(\d+\/\d+\/\d+ \d+:\d+:\d+)\] (.*)/)
   if wn_info
@@ -66,8 +66,14 @@ weeknotes.sort! { |a, b| a.created_at <=> b.created_at }
 # Get upcoming calendar events
 
 # Output blog post data
+puts "<p><em>Each week we'll endeavour to publish some details of the interesting things that members of DoES Liverpool have been up to over the past seven days.  You can find out a bit more about them in <a href=\"http://doesliverpool.com/uncategorized/talking-about-ourselves/\">our introductory post</a>.</em></p>"
+puts "<p><em>And remember, if you're involved with DoES Liverpool at all, let us know what you get up to so we can include it here!</em></p>"
+puts "<h3>Things of Note</h3>"
 puts "<ul>"
 weeknotes.each do |w|
   puts w.html
 end
 puts "</ul>"
+puts "<h3>Coming Up in the Next Week</h3>"
+puts "<table>"
+puts "</table>"

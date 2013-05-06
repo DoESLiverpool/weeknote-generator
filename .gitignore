@@ -16,3 +16,7 @@ tmp
 .yardoc
 _yardoc
 doc/
+
+# "local" files
+local_config.rb
+twitter_keys.rb
