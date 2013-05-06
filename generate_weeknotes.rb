@@ -48,7 +48,7 @@ end
 #
 # Add IRC weeknotes
 #
-irc_logfile = "\#doesliverpool"
+irc_logfile = "/home/adrian/.rbot/logs/\#doesliverpool"
 irc_weeknotes = `grep -i \#weeknotes #{irc_logfile}`
 irc_weeknotes.split("\n").each do |wn|
   wn_info = wn.match(/\[(\d+\/\d+\/\d+ \d+:\d+:\d+)\] (.*)/)
@@ -68,6 +68,6 @@ weeknotes.sort! { |a, b| a.created_at <=> b.created_at }
 # Output blog post data
 puts "<ul>"
 weeknotes.each do |w|
-  puts w.created_at.to_s+": "+w.html
+  puts w.html
 end
 puts "</ul>"
