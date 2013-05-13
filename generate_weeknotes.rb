@@ -5,6 +5,7 @@
 # to go in a weeknotes blog post
 
 require 'rubygems'
+require 'xmlrpc/client'
 require 'twitter'
 require 'twitter_keys'
 require 'time'
@@ -28,6 +29,7 @@ weeknotes = []
 # Get Twitter weeknotes
 #
 
+puts "Checking Twitter..."
 Twitter.configure do |config|
   config.consumer_key = TWITTER_CONSUMER_KEY
   config.consumer_secret = TWITTER_CONSUMER_SECRET
@@ -49,6 +51,7 @@ end
 #
 # Add IRC weeknotes
 #
+puts "Checking IRC..."
 irc_weeknotes = `grep -i \#weeknotes #{IRC_LOGFILE}`
 irc_weeknotes.split("\n").each do |wn|
   wn_info = wn.match(/\[(\d+\/\d+\/\d+ \d+:\d+:\d+)\] (.*)/)
@@ -64,16 +67,42 @@ end
 weeknotes.sort! { |a, b| a.created_at <=> b.created_at }
 
 # Get upcoming calendar events
+puts "Not checking calendar yet"
 
 # Output blog post data
-puts "<p><em>Each week we'll endeavour to publish some details of the interesting things that members of DoES Liverpool have been up to over the past seven days.  You can find out a bit more about them in <a href=\"http://doesliverpool.com/uncategorized/talking-about-ourselves/\">our introductory post</a>.</em></p>"
-puts "<p><em>And remember, if you're involved with DoES Liverpool at all, let us know what you get up to so we can include it here!</em></p>"
-puts "<h3>Things of Note</h3>"
-puts "<ul>"
+puts "Saving draft blog post..."
+content = "<p><em>Each week we'll endeavour to publish some details of the interesting things that members of DoES Liverpool have been up to over the past seven days.  You can find out a bit more about them in <a href=\"http://doesliverpool.com/uncategorized/talking-about-ourselves/\">our introductory post</a>.</em></p>"
+content = content + "\n<p><em>And remember, if you're involved with DoES Liverpool at all, let us know what you get up to so we can include it here!</em></p>"
+content = content + "\n<h3>Things of Note</h3>"
+content = content + "\n<ul>"
 weeknotes.each do |w|
-  puts w.html
+  content = content + "\n" + w.html
 end
-puts "</ul>"
-puts "<h3>Coming Up in the Next Week</h3>"
-puts "<table>"
-puts "</table>"
+content = content + "\n</ul>"
+content = content + "\n<h3>Coming Up in the Next Week</h3>"
+content = content + "\n<table>"
+content = content + "\n</table>"
+
+# Post it up as a draft post
+post = {
+  'title' => 'Week X',
+  'description' => content,
+  'mt_keywords' => ['weeknotes'],
+  'categories' => ['weeknotes'],
+  'post_status' => 'draft'
+}
+
+# initialize the connection
+connection = XMLRPC::Client.new(BLOG_SERVER, BLOG_XMLRPC_ENDPOINT)
+
+# make the call to publish a new post
+connection.call(
+  'metaWeblog.newPost',
+  1,
+  BLOG_USERNAME,
+  BLOG_PASSWORD,
+  post,
+  true
+)
+
+puts "Done."
