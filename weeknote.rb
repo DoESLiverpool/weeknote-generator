@@ -21,9 +21,11 @@ class Weeknote
       # FIXME This probably won't work when we get a non-picture media type
       tweet.text.gsub!(m.url, "<a href=\"#{m.expanded_url}\">#{m.display_url}</a> <img src=\"#{m.media_url}\" width=\"#{m.sizes[:medium].w}\" height=\"#{m.sizes[:medium].h}\">")
     end
-    html = "<li><a href=\"https://twitter.com/#{tweet.user.screen_name}/status/#{tweet.id}\">#{tweet.user.screen_name}</a>: #{tweet.text}</li>"
-    # Expand any twitter names
-    html.gsub!(/@(\w+)/) { "<a href=\"http://twitter.com/#{$1}\">@#{$1}</a>" }
+    # Expand any twitter names, using friendly names rather than twitter handles
+    tweet.user_mentions.each do |u|
+      tweet.text.gsub!("@#{u.screen_name}", "<a href=\"http://twitter.com/#{u.screen_name}\">#{u.name}</a>")
+    end
+    html = "<li><a href=\"https://twitter.com/#{tweet.user.screen_name}/status/#{tweet.id}\">#{tweet.user.name}</a>: #{tweet.text}</li>"
     # Expand any hashtags
     html.gsub!(/#(\w+)/) { "<a href=\"https://twitter.com/search?q=%23#{$1}\">##{$1}</a>" }
     Weeknote.new(tweet.created_at, html)
