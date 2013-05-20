@@ -1,6 +1,13 @@
 # File to store info that changes depending on where you deploy the code
 #
 
+# Whether we're testing or not.  If true, we won't generate the blog
+# post at the end, just output what it would've been
+TESTING = true
+
+# Date that your company was founded
+FOUNDING_DATE = Date.civil(2011, 6, 10)
+
 # Location of the log file where the conversation on your IRC channel is
 # logged.  At present assumes the log output from rbot, which is of the form
 # [YYYY/MM/DD HH:MM:SS] <username> content

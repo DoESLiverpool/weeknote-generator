@@ -14,11 +14,41 @@ require 'time_start_and_end_extensions'
 require 'weeknote'
 require 'local_config'
 
+# Function to work out which week this is
+# If your company/project/whatever started on registration_date, this will
+# return the correct week number on the date day_to_check
+# Both registration_date and day_to_check must be of type Date
+def week_on_date(registration_date, day_to_check)
+  # Get the start of the week for each of those dates
+  if registration_date.wday == 0
+    # wday of 0 is Sunday, and we want our weeks to start on Monday
+    registration_date = registration_date - 6
+  else
+    registration_date = registration_date - (registration_date.wday - 1)
+  end
+  
+  if day_to_check.wday == 0
+    day_to_check = day_to_check - 6
+  else
+    day_to_check = day_to_check - (day_to_check.wday - 1)
+  end
+  
+  (((day_to_check - registration_date)/7)+1)
+end
+
 start_of_last_week = (Time.now.start_of_work_week-1.day).start_of_work_week
 end_of_last_week = start_of_last_week.end_of_work_week
 start_of_this_week = Time.now.start_of_work_week
 end_of_this_week = Time.now.end_of_work_week
 
+# Work out which week we're generating the weeknotes for
+week_number = week_on_date(FOUNDING_DATE, Date.parse(start_of_last_week.to_s))
+
+puts
+puts "Week #{week_number}"
+(week_number.to_s.length+5).times { putc '-' }
+puts
+puts
 puts "Weeknotes from "+start_of_last_week.to_s+" to "+end_of_last_week.to_s
 puts "Calendar from "+start_of_this_week.to_s+" to "+end_of_this_week.to_s
 
@@ -85,24 +115,38 @@ content = content + "\n</table>"
 
 # Post it up as a draft post
 post = {
-  'title' => 'Week X',
+  'title' => 'Week '+week_number.to_s,
   'description' => content,
   'mt_keywords' => ['weeknotes'],
   'categories' => ['weeknotes'],
   'post_status' => 'draft'
 }
 
-# initialize the connection
-connection = XMLRPC::Client.new(BLOG_SERVER, BLOG_XMLRPC_ENDPOINT)
+if TESTING == true
+  puts
+  puts "########### TESTING ############"
+  puts "We aren't going to generate a blog post"
+  puts "However, it would've looked like this:"
+  puts
+  puts post["title"]
+  post["title"].length.times { putc '-' }
 
-# make the call to publish a new post
-connection.call(
-  'metaWeblog.newPost',
-  1,
-  BLOG_USERNAME,
-  BLOG_PASSWORD,
-  post,
-  true
-)
+  puts
+  puts post["description"]
+  puts
+else
+  # initialize the connection
+  connection = XMLRPC::Client.new(BLOG_SERVER, BLOG_XMLRPC_ENDPOINT)
+  
+  # make the call to publish a new post
+  connection.call(
+    'metaWeblog.newPost',
+    1,
+    BLOG_USERNAME,
+    BLOG_PASSWORD,
+    post,
+    true
+  )
+end
 
 puts "Done."
