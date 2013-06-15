@@ -12,6 +12,7 @@ require 'time'
 require 'ri_cal'
 require 'time_start_and_end_extensions'
 require 'weeknote'
+require 'weeknote_event'
 require 'local_config'
 
 # Function to work out which week this is
@@ -97,7 +98,41 @@ end
 weeknotes.sort! { |a, b| a.created_at <=> b.created_at }
 
 # Get upcoming calendar events
-puts "Not checking calendar yet"
+events = []
+# Download and parse the calendar
+if (CAL_URL_IS_HTTPS)
+  cal_uri = URI.parse(CAL_URL)
+  cal_http = Net::HTTP.new(cal_uri.host, 443)
+  cal_http.use_ssl = true
+  cal_req = Net::HTTP::Get.new(cal_uri.request_uri)
+  cal_data = cal_http.request(cal_req)
+else
+  cal_data = Net::HTTP.get_response(URI.parse(CAL_URL))
+end
+all_events = RiCal.parse_string(cal_data.body)
+# Find any relevant events
+all_events.each do |cal|
+  cal.events.each do |ev|
+    event_start = ev.start_time
+    recurring_occurrence = nil
+    if ev.recurs?
+      # This is a recurring event, so work out the start of the next occurrence
+      next_occurrence = ev.occurrences(:count => 1, :starting => start_of_this_week)
+      unless next_occurrence.empty?
+        event_start = next_occurrence[0].start_time
+        recurring_occurrence = next_occurrence[0]
+      end
+    end
+    # Crude type conversion because event times are DateTime objects
+    # and the [start|end]_of_this_week variables are Time objects
+    event_start = Time.parse(event_start.to_s)
+    if event_start >= start_of_this_week && event_start <= end_of_this_week
+      events.push(WeeknoteEvent.new_from_ical(ev, recurring_occurrence))
+    end
+  end
+end
+# Sort the events by start date/time
+events.sort! { |a, b| a.start_time <=> b.start_time }
 
 # Output blog post data
 puts "Saving draft blog post..."
@@ -111,6 +146,9 @@ end
 content = content + "\n</ul>"
 content = content + "\n<h3>Coming Up in the Next Week</h3>"
 content = content + "\n<table>"
+events.each do |ev|
+  content = content + "\n" + ev.html
+end
 content = content + "\n</table>"
 
 # Post it up as a draft post

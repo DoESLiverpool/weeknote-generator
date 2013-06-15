@@ -19,3 +19,8 @@ BLOG_XMLRPC_ENDPOINT = "/xmlrpc.php"
 BLOG_USERNAME = "myuser"
 BLOG_PASSWORD = "secret_password"
 
+# URL for the events calendar iCal feed
+CAL_URL = "https://www.example.com/calendar/ical/basic.ics"
+# If your calendar uses HTTPS rather than HTTP, set this to true
+CAL_URL_IS_HTTPS = true
+
