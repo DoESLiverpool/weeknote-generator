@@ -60,7 +60,7 @@ weeknotes = []
 # Get Twitter weeknotes
 #
 
-puts "Checking Twitter..."
+puts "Checking Twitter mentions..."
 Twitter.configure do |config|
   config.consumer_key = TWITTER_CONSUMER_KEY
   config.consumer_secret = TWITTER_CONSUMER_SECRET
@@ -69,6 +69,18 @@ Twitter.configure do |config|
 end
 # Get as many @mentions as we can
 Twitter.mentions_timeline(:count => 200).each do |mention|
+  if mention.created_at >= start_of_last_week && mention.created_at <= end_of_last_week
+    # This is a mention we might be interested in
+    if mention.text.match(/#weeknotes/)
+      # It's a mention in the past week containing "#weeknotes"
+      weeknotes.push(Weeknote.new_from_tweet(mention))
+    end
+  end
+end
+
+puts "Checking own tweets..."
+# Get as many @mentions as we can
+Twitter.user_timeline(:count => 200).each do |mention|
   if mention.created_at >= start_of_last_week && mention.created_at <= end_of_last_week
     # This is a mention we might be interested in
     if mention.text.match(/#weeknotes/)
