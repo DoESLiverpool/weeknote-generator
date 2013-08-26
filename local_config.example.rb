@@ -24,3 +24,16 @@ CAL_URL = "https://www.example.com/calendar/ical/basic.ics"
 # If your calendar uses HTTPS rather than HTTP, set this to true
 CAL_URL_IS_HTTPS = true
 
+# Mail server details
+MAIL_SERVER = 'smtp.mydomain.com'
+MAIL_PORT = 587
+MAIL_DOMAIN = 'mydomain.com'
+MAIL_USER = 'my email username'
+MAIL_PASS = 'secret password'
+MAIL_AUTHTYPE = :login
+MAIL_FROM_ADDRESS = "myemail@mydomain.com"
+MAIL_LONG_FROM_ADDRESS = "My Name <myemail@mydomain.com>"
+MAIL_NOTIFY_ADDRESS = "whotoinform@mydomain.com"
+MAIL_LONG_NOTIFY_ADDRESS = "Person To Inform <whotoinform@mydomain.com>"
+
+

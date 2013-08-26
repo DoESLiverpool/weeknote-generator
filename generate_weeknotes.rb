@@ -6,6 +6,7 @@
 
 require 'rubygems'
 require 'xmlrpc/client'
+require 'net/smtp'
 require 'twitter'
 require 'twitter_keys'
 require 'time'
@@ -197,6 +198,25 @@ else
     post,
     true
   )
+
+  # And inform whoever needs to go and put the blog post live
+  message = <<MESSAGE_END
+From: #{MAIL_LONG_FROM_ADDRESS}
+To: #{MAIL_LONG_NOTIFY_ADDRESS}
+MIME-Version: 1.0
+Content-Type: text/html
+Subject: Weeknotes for Week #{week_number} are ready
+
+<p>I've prepared the weeknotes for this week.  Someone needs to log into <a href="http://doesliverpool.com/wp-admin/edit.php">http://doesliverpool.com/wp-admin/edit.php</a>, check them over (particularly the calendar section), come up with a better title, and publish the blog post.</p>
+
+<p>Then tweet about it from @DoESLiverpool and cut-and-paste the weeknotes blog post into an email to the DoES Liverpool Google Group.</p>
+MESSAGE_END
+
+  smtp = Net::SMTP.new MAIL_SERVER, MAIL_PORT
+  smtp.enable_starttls
+  smtp.start(MAIL_DOMAIN, MAIL_USER, MAIL_PASS, MAIL_AUTHTYPE) do
+    smtp.send_message message, MAIL_FROM_ADDRESS, MAIL_NOTIFY_ADDRESS
+  end
 end
 
 puts "Done."
