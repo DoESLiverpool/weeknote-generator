@@ -14,12 +14,12 @@ class Weeknote
   def Weeknote.new_from_tweet(tweet)
     # Expand any URLs
     tweet.urls.each do |u|
-      tweet.text.gsub!(u.url, "<a href=\"#{u.expanded_url}\">#{u.display_url}</a>")
+      tweet.text.gsub!(u.url, "<a href=\"http://#{u.display_url}\">#{u.display_url}</a>")
     end
     # Expand any pictures
     tweet.media.each do |m|
       # FIXME This probably won't work when we get a non-picture media type
-      tweet.text.gsub!(m.url, "<a href=\"#{m.expanded_url}\">#{m.display_url}</a> <img src=\"#{m.media_url}\" width=\"#{m.sizes[:medium].w}\" height=\"#{m.sizes[:medium].h}\">")
+      tweet.text.gsub!(m.url, "<a href=\"http://#{m.display_url}\">#{m.display_url}</a> <img src=\"#{m.media_url}\" width=\"#{m.sizes[:medium].w}\" height=\"#{m.sizes[:medium].h}\">")
     end
     # Expand any twitter names, using friendly names rather than twitter handles
     tweet.user_mentions.each do |u|
