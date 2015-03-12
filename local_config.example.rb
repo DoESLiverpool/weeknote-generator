@@ -24,6 +24,12 @@ CAL_URL = "https://www.example.com/calendar/ical/basic.ics"
 # If your calendar uses HTTPS rather than HTTP, set this to true
 CAL_URL_IS_HTTPS = true
 
+# URL for the issue list
+# NB: This is likely only to work with Github
+ISSUE_URL = "https://api.github.com/repos/mygithubuser/my-issues-repo/issues"
+# If your issue list uses HTTPS rather than HTTP, set this to true
+ISSUE_URL_IS_HTTPS = true
+
 # Mail server details
 MAIL_SERVER = 'smtp.mydomain.com'
 MAIL_PORT = 587

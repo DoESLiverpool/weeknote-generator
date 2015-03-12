@@ -11,6 +11,8 @@ require 'twitter'
 require 'twitter_keys'
 require 'time'
 require 'ri_cal'
+require 'net/https'
+require 'json'
 require 'time_start_and_end_extensions'
 require 'weeknote'
 require 'weeknote_event'
@@ -147,6 +149,35 @@ end
 # Sort the events by start date/time
 events.sort! { |a, b| a.start_time <=> b.start_time }
 
+# Download all the issues
+if (ISSUE_URL_IS_HTTPS)
+  issue_uri = URI.parse(ISSUE_URL)
+  issue_http = Net::HTTP.new(issue_uri.host, 443)
+  issue_http.use_ssl = true
+  issue_req = Net::HTTP::Get.new(issue_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
+  issue_data = issue_http.request(issue_req)
+else
+  issue_data = Net::HTTP.get_response(URI.parse(ISSUE_URL))
+end
+
+issues = JSON.parse(issue_data.body)
+
+# Start with no issues opened or closed
+new_issues = []
+closed_issues = []
+
+issues.each do |issue|
+  #puts issue.inspect
+  created_at = Time.parse(issue["created_at"])
+  if created_at >= start_of_last_week && created_at <= end_of_last_week
+    new_issues.push(issue)
+  end
+  closed_at = nil || issue["closed_at"] && Time.parse(issue["closed_at"])
+  if closed_at && closed_at >= start_of_last_week && closed_at <= end_of_last_week
+    closed_issues.push(issue)
+  end
+end
+
 # Output blog post data
 puts "Saving draft blog post..."
 content = "<p><em>Each week we'll endeavour to publish some details of the interesting things that members of DoES Liverpool have been up to over the past seven days.  You can find out a bit more about them in <a href=\"http://doesliverpool.com/uncategorized/talking-about-ourselves/\">our introductory post</a>.</em></p>"
@@ -163,6 +194,42 @@ events.each do |ev|
   content = content + "\n" + ev.html
 end
 content = content + "\n</table>"
+content = content + "\n<h3>Somebody Should</h3>"
+content = content + "\n<p>The DoES Liverpool to-do list is stored in the issues of our Somebody Should repository on github. Head over there if there's something you'd like to report, or if you want to help out fixing things.</p>"
+if new_issues.empty?
+  content = content + "\n<p>No new issues</p>"
+else
+  if new_issues.size == 1
+    content = content + "\n<p>#{new_issues.size} new issue:"
+  else
+    content = content + "\n<p>#{new_issues.size} new issues:"
+  end
+  content = content + "\n<ul>"
+  new_issues.each do |i|
+    url = i["html_url"]
+    title = i["title"]
+    content = content + "\n  <li><a href='#{url}'>#{title}</a></li>"
+  end
+  content = content + "\n</ul>"
+end
+
+if closed_issues.empty?
+  content = content + "\n<p>No issues closed</p>"
+else
+  if closed_issues.size == 1
+    content = content + "\n<p>#{closed_issues.size} issue closed:"
+  else
+    content = content + "\n<p>#{closed_issues.size} issues closed:"
+  end
+  content = content + "\n<ul>"
+  closed_issues.each do |i|
+    url = i["html_url"]
+    title = i["title"]
+    content = content + "\n  <li><strike><a href='#{url}'>#{title}</a></strike></li>"
+  end
+  content = content + "\n</ul>"
+end
+
 
 # Post it up as a draft post
 post = {
