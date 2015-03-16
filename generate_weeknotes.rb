@@ -226,7 +226,7 @@ else
   new_issues.each do |i|
     url = i["html_url"]
     title = i["title"]
-    if issue["closed_at"].nil?
+    if i["closed_at"].nil?
       content = content + "\n  <li><a href='#{url}'>#{title}</a></li>"
     else
       content = content + "\n  <li><strike><a href='#{url}'>#{title}</a></strike></li>"
