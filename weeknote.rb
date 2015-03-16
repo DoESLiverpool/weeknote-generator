@@ -14,7 +14,7 @@ class Weeknote
   def Weeknote.new_from_tweet(tweet)
     # Expand any URLs
     tweet.urls.each do |u|
-      tweet.text.gsub!(u.url, "<a href=\"http://#{u.display_url}\">#{u.display_url}</a>")
+      tweet.text.gsub!(u.url, "<a href=\"#{u.expanded_url}\">#{u.display_url}</a>")
     end
     # Expand any pictures
     tweet.media.each do |m|
