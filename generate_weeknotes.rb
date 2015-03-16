@@ -149,33 +149,50 @@ end
 # Sort the events by start date/time
 events.sort! { |a, b| a.start_time <=> b.start_time }
 
-# Download all the issues
-if (ISSUE_URL_IS_HTTPS)
-  issue_uri = URI.parse(ISSUE_URL)
-  issue_http = Net::HTTP.new(issue_uri.host, 443)
-  issue_http.use_ssl = true
-  issue_req = Net::HTTP::Get.new(issue_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
-  issue_data = issue_http.request(issue_req)
-else
-  issue_data = Net::HTTP.get_response(URI.parse(ISSUE_URL))
-end
-
-issues = JSON.parse(issue_data.body)
-
 # Start with no issues opened or closed
 new_issues = []
 closed_issues = []
+open_count = 0
+closed_count = 0
 
-issues.each do |issue|
-  #puts issue.inspect
-  created_at = Time.parse(issue["created_at"])
-  if created_at >= start_of_last_week && created_at <= end_of_last_week
-    new_issues.push(issue)
+# Download all the issues.  They're paginated, so we need to make multiple requests
+issues = []
+page_num = 1
+  
+while page_num == 1 || issues.size > 0
+  # We want open and closed issues, and they're paginated
+  url_params = "?state=all&page=#{page_num}"
+  if (ISSUE_URL_IS_HTTPS)
+    issue_uri = URI.parse(ISSUE_URL+url_params)
+    issue_http = Net::HTTP.new(issue_uri.host, 443)
+    issue_http.use_ssl = true
+    issue_req = Net::HTTP::Get.new(issue_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
+    issue_data = issue_http.request(issue_req)
+  else
+    issue_data = Net::HTTP.get_response(URI.parse(ISSUE_URL+url_params))
   end
-  closed_at = nil || issue["closed_at"] && Time.parse(issue["closed_at"])
-  if closed_at && closed_at >= start_of_last_week && closed_at <= end_of_last_week
-    closed_issues.push(issue)
+  
+  issues = JSON.parse(issue_data.body)
+  
+  issues.each do |issue|
+    #puts issue.inspect
+    if issue["closed_at"].nil?
+      open_count += 1
+    else
+      closed_count += 1
+    end
+    created_at = Time.parse(issue["created_at"])
+    if created_at >= start_of_last_week && created_at <= end_of_last_week
+      new_issues.push(issue)
+    end
+    closed_at = nil || issue["closed_at"] && Time.parse(issue["closed_at"])
+    if closed_at && closed_at >= start_of_last_week && closed_at <= end_of_last_week
+      closed_issues.push(issue)
+    end
   end
+
+  # Move onto the next page
+  page_num += 1
 end
 
 # Output blog post data
@@ -195,7 +212,8 @@ events.each do |ev|
 end
 content = content + "\n</table>"
 content = content + "\n<h3>Somebody Should</h3>"
-content = content + "\n<p>The DoES Liverpool to-do list is stored in the issues of our Somebody Should repository on github. Head over there if there's something you'd like to report, or if you want to help out fixing things.</p>"
+content = content + "\n<p>The DoES Liverpool to-do list is stored in the <a href='https://github.com/DoESLiverpool/somebody-should/issues'>issues of our Somebody Should repository</a> on github. Head over there if there's something you'd like to report, or if you want to help out fixing things.</p>"
+content = content + "\n<p>Issue counts: #{open_count} open, #{closed_count} closed</p>"
 if new_issues.empty?
   content = content + "\n<p>No new issues</p>"
 else
@@ -208,7 +226,11 @@ else
   new_issues.each do |i|
     url = i["html_url"]
     title = i["title"]
-    content = content + "\n  <li><a href='#{url}'>#{title}</a></li>"
+    if issue["closed_at"].nil?
+      content = content + "\n  <li><a href='#{url}'>#{title}</a></li>"
+    else
+      content = content + "\n  <li><strike><a href='#{url}'>#{title}</a></strike></li>"
+    end
   end
   content = content + "\n</ul>"
 end
