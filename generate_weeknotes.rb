@@ -18,6 +18,10 @@ require 'weeknote'
 require 'weeknote_event'
 require 'local_config'
 
+# FIXME Not ideal, we should really check the cert, but this gets round
+# FIXME a server issue
+OpenSSL::SSL::VERIFY_PEER = OpenSSL::SSL::VERIFY_NONE
+
 # Function to work out which week this is
 # If your company/project/whatever started on registration_date, this will
 # return the correct week number on the date day_to_check
@@ -64,14 +68,14 @@ weeknotes = []
 #
 
 puts "Checking Twitter mentions..."
-Twitter.configure do |config|
+twitter_client = Twitter::REST::Client.new do |config|
   config.consumer_key = TWITTER_CONSUMER_KEY
   config.consumer_secret = TWITTER_CONSUMER_SECRET
-  config.oauth_token = TWITTER_OAUTH_KEY
-  config.oauth_token_secret = TWITTER_OAUTH_SECRET
+  config.access_token = TWITTER_OAUTH_KEY
+  config.access_token_secret = TWITTER_OAUTH_SECRET
 end
 # Get as many @mentions as we can
-Twitter.mentions_timeline(:count => 200).each do |mention|
+twitter_client.mentions_timeline(:count => 200).each do |mention|
   if mention.created_at >= start_of_last_week && mention.created_at <= end_of_last_week
     # This is a mention we might be interested in
     if mention.text.match(/#weeknotes/)
@@ -83,7 +87,7 @@ end
 
 puts "Checking own tweets..."
 # Get as many @mentions as we can
-Twitter.user_timeline(:count => 200).each do |mention|
+twitter_client.user_timeline(:count => 200).each do |mention|
   if mention.created_at >= start_of_last_week && mention.created_at <= end_of_last_week
     # This is a mention we might be interested in
     if mention.text.match(/#weeknotes/)
