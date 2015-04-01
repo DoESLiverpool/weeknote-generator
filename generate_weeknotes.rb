@@ -181,12 +181,15 @@ while page_num == 1 || issues.size > 0
   
   issues.each do |issue|
     #puts issue.inspect
-    if issue["closed_at"].nil?
-      open_count += 1
-    else
-      closed_count += 1
-    end
     created_at = Time.parse(issue["created_at"])
+    if created_at <= end_of_last_week
+      # Only count issues that existed last week
+      if issue["closed_at"].nil?
+        open_count += 1
+      else
+        closed_count += 1
+      end
+    end
     if created_at >= start_of_last_week && created_at <= end_of_last_week
       new_issues.push(issue)
     end
