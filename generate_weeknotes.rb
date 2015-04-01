@@ -156,6 +156,7 @@ events.sort! { |a, b| a.start_time <=> b.start_time }
 # Start with no issues opened or closed
 new_issues = []
 closed_issues = []
+issue_closers = []
 open_count = 0
 closed_count = 0
 
@@ -168,7 +169,7 @@ while page_num == 1 || issues.size > 0
   url_params = "?state=all&page=#{page_num}"
   if (ISSUE_URL_IS_HTTPS)
     issue_uri = URI.parse(ISSUE_URL+url_params)
-    issue_http = Net::HTTP.new(issue_uri.host, 443)
+    issue_http = Net::HTTP.new(issue_uri.host, issue_uri.port)
     issue_http.use_ssl = true
     issue_req = Net::HTTP::Get.new(issue_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
     issue_data = issue_http.request(issue_req)
@@ -192,6 +193,16 @@ while page_num == 1 || issues.size > 0
     closed_at = nil || issue["closed_at"] && Time.parse(issue["closed_at"])
     if closed_at && closed_at >= start_of_last_week && closed_at <= end_of_last_week
       closed_issues.push(issue)
+      # Find out who closed it
+      detail_uri = URI.parse(issue["url"])
+      puts detail_uri.inspect
+      detail_http = Net::HTTP.new(detail_uri.host, detail_uri.port)
+      detail_http.use_ssl = true
+      detail_req = Net::HTTP::Get.new(detail_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
+      detail_data = detail_http.request(detail_req)
+      detail = JSON.parse(detail_data.body)
+      puts detail["closed_by"]["login"]
+      issue_closers.push(detail["closed_by"])
     end
   end
 
@@ -254,6 +265,8 @@ else
     content = content + "\n  <li><strike><a href='#{url}'>#{title}</a></strike></li>"
   end
   content = content + "\n</ul>"
+  # Thank the people who closed things
+  content = content + "\n<p>Thanks " + issue_closers.uniq.collect { |c| "<a href='"+c["html_url"]+"'>"+c["login"]+"</a>" }.join(", ") + "!</p>"
 end
 
 
