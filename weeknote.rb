@@ -14,7 +14,7 @@ class Weeknote
 
   def Weeknote.new_from_tweet(tweet)
     # v5 of the Twitter gem won't let us change "text", so make a copy we can mod
-    tweet_text = tweet.text.dup
+    tweet_text = tweet.full_text.dup
     # Expand any URLs
     tweet.urls.each do |u|
       tweet_text.gsub!(u.url, "<a href=\"#{u.expanded_url}\">#{u.display_url}</a>")
