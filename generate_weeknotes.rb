@@ -67,36 +67,22 @@ weeknotes = []
 # Get Twitter weeknotes
 #
 
-puts "Checking Twitter mentions..."
+puts "Checking Twitter..."
 twitter_client = Twitter::REST::Client.new do |config|
   config.consumer_key = TWITTER_CONSUMER_KEY
   config.consumer_secret = TWITTER_CONSUMER_SECRET
   config.access_token = TWITTER_OAUTH_KEY
   config.access_token_secret = TWITTER_OAUTH_SECRET
 end
-# Get as many @mentions as we can
-twitter_client.mentions_timeline(:count => 200).each do |mention|
-  if mention.created_at >= start_of_last_week && mention.created_at <= end_of_last_week
-    # This is a mention we might be interested in
-    if mention.text.match(/#weeknotes/)
-      # It's a mention in the past week containing "#weeknotes"
-      weeknotes.push(Weeknote.new_from_tweet(mention))
+twitter_client.search("#weeknotes", :count => 100, :result_type => "recent").each do |tweet|
+  if tweet.created_at >= start_of_last_week && tweet.created_at <= end_of_last_week
+    if tweet.user.following? || tweet.user.id == TWITTER_USER_ID
+      # It's a tweet in the past week containing "#weeknotes",
+      # from someone we're following (or from us!)
+      weeknotes.push(Weeknote.new_from_tweet(tweet))
     end
   end
 end
-
-puts "Checking own tweets..."
-# Get as many @mentions as we can
-twitter_client.user_timeline(:count => 200).each do |mention|
-  if mention.created_at >= start_of_last_week && mention.created_at <= end_of_last_week
-    # This is a mention we might be interested in
-    if mention.text.match(/#weeknotes/)
-      # It's a mention in the past week containing "#weeknotes"
-      weeknotes.push(Weeknote.new_from_tweet(mention))
-    end
-  end
-end
-
 
 #
 # Add IRC weeknotes

@@ -8,6 +8,10 @@ TESTING = true
 # Date that your company was founded
 FOUNDING_DATE = Date.civil(2011, 6, 10)
 
+# ID of our Twitter user
+# e.g. TWITTER_USER_ID = 260668462
+TWITTER_USER_ID = <put user id here>
+
 # Location of the log file where the conversation on your IRC channel is
 # logged.  At present assumes the log output from rbot, which is of the form
 # [YYYY/MM/DD HH:MM:SS] <username> content
