@@ -222,9 +222,9 @@ if new_issues.empty?
   content = content + "\n<p>No new issues</p>"
 else
   if new_issues.size == 1
-    content = content + "\n<p>#{new_issues.size} new issue:"
+    content = content + "\n<p>#{new_issues.size} new issue:</p>"
   else
-    content = content + "\n<p>#{new_issues.size} new issues:"
+    content = content + "\n<p>#{new_issues.size} new issues:</p>"
   end
   content = content + "\n<ul>"
   new_issues.each do |i|
@@ -243,9 +243,9 @@ if closed_issues.empty?
   content = content + "\n<p>No issues closed</p>"
 else
   if closed_issues.size == 1
-    content = content + "\n<p>#{closed_issues.size} issue closed:"
+    content = content + "\n<p>#{closed_issues.size} issue closed:</p>"
   else
-    content = content + "\n<p>#{closed_issues.size} issues closed:"
+    content = content + "\n<p>#{closed_issues.size} issues closed:</p>"
   end
   content = content + "\n<ul>"
   closed_issues.each do |i|
