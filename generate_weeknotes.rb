@@ -258,6 +258,10 @@ else
   content = content + "\n<p>Thanks " + issue_closers.uniq.collect { |c| "<a href='"+c["html_url"]+"'>"+c["login"]+"</a>" }.join(", ") + "!</p>"
 end
 
+# Add a note on how to send blog posts for publishing
+content = content + "\n<h3>Community Content</h3>"
+content = content + "\n<p>DoES exists to support the community that uses DoES. If you use DoES, then you are part of that community. If you would like to publisise something related to DoES, you can email <a href=\"mailto:hello@doesliverpool.com\">hello@doesliverpool.com</a> with the formated content for us to use as a new blog post. Tell us what you're up to, and we'll show the world what epic stuff happens at DoES!</p>"
+
 
 # Post it up as a draft post
 post = {
