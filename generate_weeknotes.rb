@@ -9,6 +9,8 @@ require 'xmlrpc/client'
 require 'net/smtp'
 require 'twitter'
 require 'twitter_keys'
+require 'instagram'
+require 'instagram_keys'
 require 'time'
 require 'ri_cal'
 require 'net/https'
@@ -83,6 +85,36 @@ twitter_client.search("#weeknotes", :count => 100, :result_type => "recent").eac
     end
   end
 end
+
+#
+# Get Instagram weeknotes
+#
+puts "Checking Instagram mentions..."
+Instagram.configure do |config|
+  config.client_id = INSTAGRAM_CLIENT_ID
+  config.client_secret = INSTAGRAM_CLIENT_SECRET
+end
+# First time round, go to the URL output below
+#puts Instagram.authorize_url(:redirect_uri => "http://doesliverpool.com")
+#exit
+# And then, once authorized, copy the code in the redirected URL into INSTAGRAM_AUTH_CODE
+# It will have been of the form http://doesliverpool.com/?code=<code is here>
+
+# Second time through run this code, to get an access token, and save it for later use
+#response = Instagram.get_access_token(INSTAGRAM_AUTH_CODE, :redirect_uri => "http://doesliverpool.com")
+#puts response.access_token.inspect
+#exit
+
+# Then normal usage is just to use the access token we've saved
+client = Instagram.client(:access_token => INSTAGRAM_ACCESS_TOKEN)
+for media_item in client.tag_recent_media("weeknotes")
+  created_time = Time.at(media_item.created_time.to_i)
+  if created_time >= start_of_last_week && created_time <= end_of_last_week
+    # It's a media_item in the past week containing "#weeknotes"
+    weeknotes.push(Weeknote.new_from_instagram(media_item))
+  end
+end
+
 
 #
 # Add IRC weeknotes

@@ -38,6 +38,22 @@ class Weeknote
     Weeknote.new(tweet.created_at, html)
   end
 
+  def Weeknote.new_from_instagram(media_item)
+    item_text = ""
+    if media_item["type"] == "image"
+      # We can embed this image okay
+      pic = media_item.images.standard_resolution
+      item_text = "#{media_item.caption.text} <img src=\"#{pic.url}\" width=\"#{pic.width}\" height=\"#{pic.height}\">"
+    else
+      # Just provide a link to videos (for now at least)
+      item_text = "<a href=\"#{media_item.link}\">#{media_item.link}</a> #{media_item.caption.text}"
+    end
+    html = "<li><a href=\"#{media_item.link}\">#{media_item.user.full_name}</a>: #{item_text}</li>"
+    # Expand any hashtags
+    html.gsub!(/#(\w+)/) { "<a href=\"https://instagram.com/explore/tags/#{$1}/\">##{$1}</a>" }
+    Weeknote.new(Time.at(media_item.created_time.to_i), html)
+  end
+
   def Weeknote.new_from_irc(created_at, content)
     # HTML escape any <, > and &
     content.gsub!(/&/, "&amp;")
