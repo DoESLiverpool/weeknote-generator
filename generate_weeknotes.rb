@@ -5,24 +5,29 @@
 # to go in a weeknotes blog post
 
 require 'rubygems'
+require 'yaml'
 require 'xmlrpc/client'
 require 'net/smtp'
 require 'twitter'
-require 'twitter_keys'
 require 'instagram'
-require 'instagram_keys'
 require 'time'
 require 'ri_cal'
 require 'net/https'
 require 'json'
-require 'time_start_and_end_extensions'
-require 'weeknote'
-require 'weeknote_event'
-require 'local_config'
+require './time_start_and_end_extensions'
+require './weeknote'
+require './weeknote_event'
 
-# FIXME Not ideal, we should really check the cert, but this gets round
-# FIXME a server issue
-OpenSSL::SSL::VERIFY_PEER = OpenSSL::SSL::VERIFY_NONE
+# Read in config
+settings = nil
+if ARGV.length == 1
+  settings = YAML.load_file(ARGV[0])
+else
+  puts "No configuration provided."
+  exit
+end
+input_settings = settings["input"]
+output_settings = settings["output"]
 
 # Function to work out which week this is
 # If your company/project/whatever started on registration_date, this will
@@ -42,17 +47,29 @@ def week_on_date(registration_date, day_to_check)
   else
     day_to_check = day_to_check - (day_to_check.wday - 1)
   end
-  
-  (((day_to_check - registration_date)/7)+1)
+  (((day_to_check - registration_date).to_i/7)+1)
 end
 
-start_of_last_week = (Time.now.start_of_work_week-1.day).start_of_work_week
-end_of_last_week = start_of_last_week.end_of_work_week
-start_of_this_week = Time.now.start_of_work_week
-end_of_this_week = Time.now.end_of_work_week
+start_of_last_week = nil
+end_of_last_week = nil
+start_of_this_week = nil
+end_of_this_week = nil
+if settings["immediately_previous_seven_days"] == true
+  # The seven days leading up to when the script is running
+  start_of_last_week = (Time.now.start_of_day-8.days)
+  end_of_last_week = (start_of_last_week+7.days).end_of_day
+  start_of_this_week = Time.now.start_of_day
+  end_of_this_week = Time.now.start_of_day+7.days
+else
+  # The previous full week (Mon-Sun)
+  start_of_last_week = (Time.now.start_of_work_week-1.day).start_of_work_week
+  end_of_last_week = start_of_last_week.end_of_work_week
+  start_of_this_week = Time.now.start_of_work_week
+  end_of_this_week = Time.now.end_of_work_week
+end
 
 # Work out which week we're generating the weeknotes for
-week_number = week_on_date(FOUNDING_DATE, Date.parse(start_of_last_week.to_s))
+week_number = week_on_date(Date.parse(settings['founding_date']), Date.parse(start_of_last_week.to_s))
 
 puts
 puts "Week #{week_number}"
@@ -68,20 +85,23 @@ weeknotes = []
 #
 # Get Twitter weeknotes
 #
-
-puts "Checking Twitter..."
-twitter_client = Twitter::REST::Client.new do |config|
-  config.consumer_key = TWITTER_CONSUMER_KEY
-  config.consumer_secret = TWITTER_CONSUMER_SECRET
-  config.access_token = TWITTER_OAUTH_KEY
-  config.access_token_secret = TWITTER_OAUTH_SECRET
-end
-twitter_client.search("#weeknotes", :count => 100, :result_type => "recent").each do |tweet|
-  if tweet.created_at >= start_of_last_week && tweet.created_at <= end_of_last_week
-    if tweet.user.following? || tweet.user.id == TWITTER_USER_ID
-      # It's a tweet in the past week containing "#weeknotes",
-      # from someone we're following (or from us!)
-      weeknotes.push(Weeknote.new_from_tweet(tweet))
+unless input_settings["twitter"].nil?
+  puts "Checking Twitter..."
+  twitter_client = Twitter::REST::Client.new do |config|
+    config.consumer_key = input_settings["twitter"]["consumer_key"]
+    config.consumer_secret = input_settings["twitter"]["consumer_secret"]
+    config.access_token = input_settings["twitter"]["oauth_key"]
+    config.access_token_secret = input_settings["twitter"]["oauth_secret"]
+  end
+  settings["tags"].each do |tag|
+    twitter_client.search("##{tag}", :count => 100, :result_type => "recent").each do |tweet|
+      if tweet.created_at >= start_of_last_week && tweet.created_at <= end_of_last_week
+        if tweet.user.following? || tweet.user.id == input_settings["twitter"]["id"]
+          # It's a tweet in the past week containing "#weeknotes",
+          # from someone we're following (or from us!)
+          weeknotes.push(Weeknote.new_from_tweet(tweet))
+        end
+      end
     end
   end
 end
@@ -89,29 +109,33 @@ end
 #
 # Get Instagram weeknotes
 #
-puts "Checking Instagram mentions..."
-Instagram.configure do |config|
-  config.client_id = INSTAGRAM_CLIENT_ID
-  config.client_secret = INSTAGRAM_CLIENT_SECRET
-end
-# First time round, go to the URL output below
-#puts Instagram.authorize_url(:redirect_uri => "http://doesliverpool.com")
-#exit
-# And then, once authorized, copy the code in the redirected URL into INSTAGRAM_AUTH_CODE
-# It will have been of the form http://doesliverpool.com/?code=<code is here>
-
-# Second time through run this code, to get an access token, and save it for later use
-#response = Instagram.get_access_token(INSTAGRAM_AUTH_CODE, :redirect_uri => "http://doesliverpool.com")
-#puts response.access_token.inspect
-#exit
-
-# Then normal usage is just to use the access token we've saved
-client = Instagram.client(:access_token => INSTAGRAM_ACCESS_TOKEN)
-for media_item in client.tag_recent_media("weeknotes")
-  created_time = Time.at(media_item.created_time.to_i)
-  if created_time >= start_of_last_week && created_time <= end_of_last_week
-    # It's a media_item in the past week containing "#weeknotes"
-    weeknotes.push(Weeknote.new_from_instagram(media_item))
+unless input_settings["instagram"].nil?
+  puts "Checking Instagram mentions..."
+  Instagram.configure do |config|
+    config.client_id = input_settings["instagram"]["client_id"]
+    config.client_secret = input_settings["instagram"]["client_secret"]
+  end
+  # First time round, go to the URL output below
+  #puts Instagram.authorize_url(:redirect_uri => "http://doesliverpool.com")
+  #exit
+  # And then, once authorized, copy the code in the redirected URL into input_settings["instagram"]["auth_code"]
+  # It will have been of the form http://doesliverpool.com/?code=<code is here>
+  
+  # Second time through run this code, to get an access token, and save it for later use
+  #response = Instagram.get_access_token(input_settings["instagram"]["auth_code"], :redirect_uri => "http://doesliverpool.com")
+  #puts response.access_token.inspect
+  #exit
+  
+  # Then normal usage is just to use the access token we've saved
+  client = Instagram.client(:access_token => input_settings["instagram"]["access_token"])
+  settings["tags"].each do |tag|
+    for media_item in client.tag_recent_media(tag)
+      created_time = Time.at(media_item.created_time.to_i)
+      if created_time >= start_of_last_week && created_time <= end_of_last_week
+        # It's a media_item in the past week containing "#weeknotes"
+        weeknotes.push(Weeknote.new_from_instagram(media_item))
+      end
+    end
   end
 end
 
@@ -119,14 +143,18 @@ end
 #
 # Add IRC weeknotes
 #
-puts "Checking IRC..."
-irc_weeknotes = `grep -i \#weeknotes #{IRC_LOGFILE}`
-irc_weeknotes.split("\n").each do |wn|
-  wn_info = wn.match(/\[(\d+\/\d+\/\d+ \d+:\d+:\d+)\] (.*)/)
-  if wn_info
-    created_at = Time.parse(wn_info[1])
-    if created_at >= start_of_last_week && created_at <= end_of_last_week
-      weeknotes.push(Weeknote.new_from_irc(created_at, wn_info[2]))
+unless input_settings["irc_logfile"].nil?
+  puts "Checking IRC..."
+  settings["tags"].each do |tag|
+    irc_weeknotes = `grep -i \##{tag} #{input_settings["irc_logfile"]}`
+    irc_weeknotes.split("\n").each do |wn|
+      wn_info = wn.match(/\[(\d+\/\d+\/\d+ \d+:\d+:\d+)\] (.*)/)
+      if wn_info
+        created_at = Time.parse(wn_info[1])
+        if created_at >= start_of_last_week && created_at <= end_of_last_week
+          weeknotes.push(Weeknote.new_from_irc(created_at, wn_info[2]))
+        end
+      end
     end
   end
 end
@@ -136,35 +164,37 @@ weeknotes.sort! { |a, b| a.created_at <=> b.created_at }
 
 # Get upcoming calendar events
 events = []
-# Download and parse the calendar
-if (CAL_URL_IS_HTTPS)
-  cal_uri = URI.parse(CAL_URL)
-  cal_http = Net::HTTP.new(cal_uri.host, 443)
-  cal_http.use_ssl = true
-  cal_req = Net::HTTP::Get.new(cal_uri.request_uri)
-  cal_data = cal_http.request(cal_req)
-else
-  cal_data = Net::HTTP.get_response(URI.parse(CAL_URL))
-end
-all_events = RiCal.parse_string(cal_data.body)
-# Find any relevant events
-all_events.each do |cal|
-  cal.events.each do |ev|
-    event_start = ev.start_time
-    recurring_occurrence = nil
-    if ev.recurs?
-      # This is a recurring event, so work out the start of the next occurrence
-      next_occurrence = ev.occurrences(:count => 1, :starting => start_of_this_week)
-      unless next_occurrence.empty?
-        event_start = next_occurrence[0].start_time
-        recurring_occurrence = next_occurrence[0]
+unless input_settings["calendar"].nil?
+  # Download and parse the calendar
+  if (input_settings["calendar"]["url_is_https"])
+    cal_uri = URI.parse(input_settings["calendar"]["url"])
+    cal_http = Net::HTTP.new(cal_uri.host, 443)
+    cal_http.use_ssl = true
+    cal_req = Net::HTTP::Get.new(cal_uri.request_uri)
+    cal_data = cal_http.request(cal_req)
+  else
+    cal_data = Net::HTTP.get_response(URI.parse(input_settings["calendar"]["url"]))
+  end
+  all_events = RiCal.parse_string(cal_data.body)
+  # Find any relevant events
+  all_events.each do |cal|
+    cal.events.each do |ev|
+      event_start = ev.start_time
+      recurring_occurrence = nil
+      if ev.recurs?
+        # This is a recurring event, so work out the start of the next occurrence
+        next_occurrence = ev.occurrences(:count => 1, :starting => start_of_this_week)
+        unless next_occurrence.empty?
+          event_start = next_occurrence[0].start_time
+          recurring_occurrence = next_occurrence[0]
+        end
       end
-    end
-    # Crude type conversion because event times are DateTime objects
-    # and the [start|end]_of_this_week variables are Time objects
-    event_start = Time.parse(event_start.to_s)
-    if event_start >= start_of_this_week && event_start <= end_of_this_week
-      events.push(WeeknoteEvent.new_from_ical(ev, recurring_occurrence))
+      # Crude type conversion because event times are DateTime objects
+      # and the [start|end]_of_this_week variables are Time objects
+      event_start = Time.parse(event_start.to_s)
+      if event_start >= start_of_this_week && event_start <= end_of_this_week
+        events.push(WeeknoteEvent.new_from_ical(ev, recurring_occurrence))
+      end
     end
   end
 end
@@ -179,132 +209,141 @@ open_count = 0
 closed_count = 0
 
 # Download all the issues.  They're paginated, so we need to make multiple requests
-issues = []
-page_num = 1
-  
-while page_num == 1 || issues.size > 0
-  # We want open and closed issues, and they're paginated
-  url_params = "?state=all&page=#{page_num}"
-  if (ISSUE_URL_IS_HTTPS)
-    issue_uri = URI.parse(ISSUE_URL+url_params)
-    issue_http = Net::HTTP.new(issue_uri.host, issue_uri.port)
-    issue_http.use_ssl = true
-    issue_req = Net::HTTP::Get.new(issue_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
-    issue_data = issue_http.request(issue_req)
-  else
-    issue_data = Net::HTTP.get_response(URI.parse(ISSUE_URL+url_params))
-  end
-  
-  issues = JSON.parse(issue_data.body)
-  
-  issues.each do |issue|
-    #puts issue.inspect
-    created_at = Time.parse(issue["created_at"])
-    if created_at <= end_of_last_week
-      # Only count issues that existed last week
-      if issue["closed_at"].nil?
-        open_count += 1
-      else
-        closed_count += 1
+unless input_settings["issues"].nil?
+  issues = []
+  page_num = 1
+    
+  while page_num == 1 || issues.size > 0
+    # We want open and closed issues, and they're paginated
+    url_params = "?state=all&page=#{page_num}"
+    if (input_settings["issues"]["url_is_https"])
+      issue_uri = URI.parse(input_settings["issues"]["url"]+url_params)
+      issue_http = Net::HTTP.new(issue_uri.host, issue_uri.port)
+      issue_http.use_ssl = true
+      issue_req = Net::HTTP::Get.new(issue_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
+      issue_data = issue_http.request(issue_req)
+    else
+      issue_data = Net::HTTP.get_response(URI.parse(input_settings["issues"]["url"]+url_params))
+    end
+    
+    issues = JSON.parse(issue_data.body)
+    
+    issues.each do |issue|
+      #puts issue.inspect
+      created_at = Time.parse(issue["created_at"])
+      if created_at <= end_of_last_week
+        # Only count issues that existed last week
+        if issue["closed_at"].nil?
+          open_count += 1
+        else
+          closed_count += 1
+        end
+      end
+      if created_at >= start_of_last_week && created_at <= end_of_last_week
+        new_issues.push(issue)
+      end
+      closed_at = nil || issue["closed_at"] && Time.parse(issue["closed_at"])
+      if closed_at && closed_at >= start_of_last_week && closed_at <= end_of_last_week
+        closed_issues.push(issue)
+        # Find out who closed it
+        detail_uri = URI.parse(issue["url"])
+        puts detail_uri.inspect
+        detail_http = Net::HTTP.new(detail_uri.host, detail_uri.port)
+        detail_http.use_ssl = true
+        detail_req = Net::HTTP::Get.new(detail_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
+        detail_data = detail_http.request(detail_req)
+        detail = JSON.parse(detail_data.body)
+        puts detail["closed_by"]["login"]
+        issue_closers.push(detail["closed_by"])
       end
     end
-    if created_at >= start_of_last_week && created_at <= end_of_last_week
-      new_issues.push(issue)
-    end
-    closed_at = nil || issue["closed_at"] && Time.parse(issue["closed_at"])
-    if closed_at && closed_at >= start_of_last_week && closed_at <= end_of_last_week
-      closed_issues.push(issue)
-      # Find out who closed it
-      detail_uri = URI.parse(issue["url"])
-      puts detail_uri.inspect
-      detail_http = Net::HTTP.new(detail_uri.host, detail_uri.port)
-      detail_http.use_ssl = true
-      detail_req = Net::HTTP::Get.new(detail_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
-      detail_data = detail_http.request(detail_req)
-      detail = JSON.parse(detail_data.body)
-      puts detail["closed_by"]["login"]
-      issue_closers.push(detail["closed_by"])
-    end
+  
+    # Move onto the next page
+    page_num += 1
   end
-
-  # Move onto the next page
-  page_num += 1
 end
 
 # Output blog post data
 puts "Saving draft blog post..."
-content = "<p><em>Each week we'll endeavour to publish some details of the interesting things that members of DoES Liverpool have been up to over the past seven days.  You can find out a bit more about them in <a href=\"http://doesliverpool.com/uncategorized/talking-about-ourselves/\">our introductory post</a>.</em></p>"
-content = content + "\n<p><em>And remember, if you're involved with DoES Liverpool at all, let us know what you get up to so we can include it here!</em></p>"
-content = content + "\n<h3>Things of Note</h3>"
-content = content + "\n<ul>"
-weeknotes.each do |w|
-  content = content + "\n" + w.html
-end
-content = content + "\n</ul>"
-content = content + "\n<h3>Coming Up in the Next Week</h3>"
-content = content + "\n<table>"
-events.each do |ev|
-  content = content + "\n" + ev.html
-end
-content = content + "\n</table>"
-content = content + "\n<h3>Somebody Should</h3>"
-content = content + "\n<p>The DoES Liverpool to-do list is stored in the <a href='https://github.com/DoESLiverpool/somebody-should/issues'>issues of our Somebody Should repository</a> on github. Head over there if there's something you'd like to report, or if you want to help out fixing things.</p>"
-content = content + "\n<p>Issue counts: #{open_count} open, #{closed_count} closed</p>"
-if new_issues.empty?
-  content = content + "\n<p>No new issues</p>"
-else
-  if new_issues.size == 1
-    content = content + "\n<p>#{new_issues.size} new issue:</p>"
-  else
-    content = content + "\n<p>#{new_issues.size} new issues:</p>"
-  end
+content = output_settings["preambles"]["intro"]
+unless weeknotes.empty?
+  content = content + "\n<h3>Things of Note</h3>"
   content = content + "\n<ul>"
-  new_issues.each do |i|
-    url = i["html_url"]
-    title = i["title"]
-    if i["closed_at"].nil?
-      content = content + "\n  <li><a href='#{url}'>#{title}</a></li>"
+  weeknotes.each do |w|
+    content = content + "\n" + w.html
+  end
+  content = content + "\n</ul>"
+end
+unless input_settings["calendar"].nil?
+  content = content + "\n<h3>Coming Up in the Next Week</h3>"
+  content = content + "\n<table>"
+  events.each do |ev|
+    content = content + "\n" + ev.html
+  end
+  content = content + "\n</table>"
+end
+unless input_settings["issues"].nil?
+  content = content + "\n#{output_settings["preambles"]["issues"]}"
+  content = content + "\n<p>Issue counts: #{open_count} open, #{closed_count} closed</p>"
+  if new_issues.empty?
+    content = content + "\n<p>No new issues</p>"
+  else
+    if new_issues.size == 1
+      content = content + "\n<p>#{new_issues.size} new issue:</p>"
     else
+      content = content + "\n<p>#{new_issues.size} new issues:</p>"
+    end
+    content = content + "\n<ul>"
+    new_issues.each do |i|
+      url = i["html_url"]
+      title = i["title"]
+      if i["closed_at"].nil?
+        content = content + "\n  <li><a href='#{url}'>#{title}</a></li>"
+      else
+        content = content + "\n  <li><strike><a href='#{url}'>#{title}</a></strike></li>"
+      end
+    end
+    content = content + "\n</ul>"
+  end
+  
+  if closed_issues.empty?
+    content = content + "\n<p>No issues closed</p>"
+  else
+    if closed_issues.size == 1
+      content = content + "\n<p>#{closed_issues.size} issue closed:</p>"
+    else
+      content = content + "\n<p>#{closed_issues.size} issues closed:</p>"
+    end
+    content = content + "\n<ul>"
+    closed_issues.each do |i|
+      url = i["html_url"]
+      title = i["title"]
       content = content + "\n  <li><strike><a href='#{url}'>#{title}</a></strike></li>"
     end
+    content = content + "\n</ul>"
+    # Thank the people who closed things
+    content = content + "\n<p>Thanks " + issue_closers.uniq.collect { |c| "<a href='"+c["html_url"]+"'>"+c["login"]+"</a>" }.join(", ") + "!</p>"
   end
-  content = content + "\n</ul>"
-end
-
-if closed_issues.empty?
-  content = content + "\n<p>No issues closed</p>"
-else
-  if closed_issues.size == 1
-    content = content + "\n<p>#{closed_issues.size} issue closed:</p>"
-  else
-    content = content + "\n<p>#{closed_issues.size} issues closed:</p>"
-  end
-  content = content + "\n<ul>"
-  closed_issues.each do |i|
-    url = i["html_url"]
-    title = i["title"]
-    content = content + "\n  <li><strike><a href='#{url}'>#{title}</a></strike></li>"
-  end
-  content = content + "\n</ul>"
-  # Thank the people who closed things
-  content = content + "\n<p>Thanks " + issue_closers.uniq.collect { |c| "<a href='"+c["html_url"]+"'>"+c["login"]+"</a>" }.join(", ") + "!</p>"
 end
 
 # Add a note on how to send blog posts for publishing
-content = content + "\n<h3>Community Content</h3>"
-content = content + "\n<p>DoES exists to support the community that uses DoES. If you use DoES, then you are part of that community. If you would like to publicise something related to DoES, you can email <a href=\"mailto:hello@doesliverpool.com\">hello@doesliverpool.com</a> with the formatted content for us to use as a new blog post. Tell us what you're up to, and we'll show the world what epic stuff happens at DoES!</p>"
+content = content + "\n#{output_settings["preambles"]["outro"]}"
 
-
+# Work out the title
+title = output_settings["title"]
+title.gsub!(/\#\{week_number\}/, week_number.to_s)
+title.gsub!(/\#\{today\}/, Date.today.to_s)
+title.gsub!(/\#\{yesterday\}/, (Date.today - 1).to_s)
 # Post it up as a draft post
 post = {
-  'title' => 'Week '+week_number.to_s,
+  'title' => title,
   'description' => content,
   'mt_keywords' => ['weeknotes'],
   'categories' => ['weeknotes'],
   'post_status' => 'draft'
 }
 
-if TESTING == true
+if settings["testing"] == true
   puts
   puts "########### TESTING ############"
   puts "We aren't going to generate a blog post"
@@ -317,36 +356,50 @@ if TESTING == true
   puts post["description"]
   puts
 else
-  # initialize the connection
-  connection = XMLRPC::Client.new(BLOG_SERVER, BLOG_XMLRPC_ENDPOINT)
-  
-  # make the call to publish a new post
-  connection.call(
-    'metaWeblog.newPost',
-    1,
-    BLOG_USERNAME,
-    BLOG_PASSWORD,
-    post,
-    true
-  )
+  unless output_settings["blog_server"].nil?
+    # initialize the connection
+    connection = XMLRPC::Client.new(BLOG_SERVER, BLOG_XMLRPC_ENDPOINT)
+    
+    # make the call to publish a new post
+    connection.call(
+      'metaWeblog.newPost',
+      1,
+      BLOG_USERNAME,
+      BLOG_PASSWORD,
+      post,
+      true
+    )
+  end
 
-  # And inform whoever needs to go and put the blog post live
-  message = <<MESSAGE_END
-From: #{MAIL_LONG_FROM_ADDRESS}
-To: #{MAIL_LONG_NOTIFY_ADDRESS}
+  unless output_settings["blog_folder"].nil?
+    filename = post["title"].gsub(/ /, "-")
+    File.open("#{output_settings['blog_folder']}#{filename}", "w") do |draft|
+      draft.puts "---"
+      draft.puts "layout: post"
+      draft.puts "title: #{post['title']}"
+      draft.puts "category: #{post['categories']}"
+      draft.puts "tag: [#{settings['tags'].join(',')}]"
+      draft.puts "---"
+      draft.puts post['description']
+    end
+  end
+
+  unless output_settings["mail"].nil?
+    # And inform whoever needs to go and put the blog post live
+    message = <<MESSAGE_END
+From: #{output_settings["mail"]["long_from_address"]}
+To: #{output_settings["mail"]["long_notify_addresses"].join(",")}
 MIME-Version: 1.0
 Content-Type: text/html
-Subject: Weeknotes for Week #{week_number} are ready
+Subject: #{output_settings["mail"]["subject"]} for Week #{week_number} are ready
 
-<p>I've prepared the weeknotes for this week.  Someone needs to log into <a href="http://doesliverpool.com/wp-admin/edit.php">http://doesliverpool.com/wp-admin/edit.php</a>, check them over (particularly the calendar section), come up with a better title, and publish the blog post.</p>
-
-<p>Then tweet about it from @DoESLiverpool and cut-and-paste the weeknotes blog post into an email to the DoES Liverpool Google Group.</p>
+#{output_settings["mail"]["body"]}
 MESSAGE_END
-
-  smtp = Net::SMTP.new MAIL_SERVER, MAIL_PORT
-  smtp.enable_starttls
-  smtp.start(MAIL_DOMAIN, MAIL_USER, MAIL_PASS, MAIL_AUTHTYPE) do
-    smtp.send_message message, MAIL_FROM_ADDRESS, MAIL_NOTIFY_ADDRESS
+    smtp = Net::SMTP.new output_settings["mail"]["server"], output_settings["mail"]["port"]
+    smtp.enable_starttls
+    smtp.start(output_settings["mail"]["domain"], output_settings["mail"]["user"], output_settings["mail"]["password"], :login) do
+      smtp.send_message message, output_settings["mail"]["from_address"], output_settings["mail"]["notify_addresses"]
+    end
   end
 end
 

@@ -1,0 +1,87 @@
+# Sample configuration to generate weeknotes and publish on
+# a Wordpress blog (via XMLRPC).
+# Comment out / remove any sections you don't want to check and update
+# relevant details to match your social media accounts, etc.
+
+# Whether we're testing or not.  If true, we won't generate the blog
+# post at the end, just output what it would've been
+testing: true
+# Date that your company was founded
+founding_date: "2011/06/10"
+tags: # Tags to search social media to find
+  - "weeknotes"
+# Whether to collect weeknotes for previous 7 days or previous week (i.e. Mon-Sun)
+immediately_previous_seven_days: false
+input:
+  # Twitter account details
+  twitter:
+    id: <put user id here> # ID of our Twitter user, e.g. 260668462
+    # Twitter OAuth details, retrieved from your Twitter App page
+    # https://dev.twitter.com/apps
+    consumer_key: "my_twitter_consumer_key"
+    consumer_secret: "my_twitter_consumer_secret"
+    oauth_key: "my_twitter_oauth_key"
+    oauth_secret: "my_twitter_oauth_secret"
+  # Instagram OAuth details
+  instagram:
+    client_id: "my_instagram_client_id"
+    client_secret: "my_instagram_client_secret"
+    auth_code: "my_auth_code_from_instagram"
+    access_token: "my_access_token_from_instagram"
+  # Location of the log file where the conversation on your IRC channel is
+  # logged.  At present assumes the log output from rbot, which is of the form
+  # [YYYY/MM/DD HH:MM:SS] <username> content
+  irc_logfile: '/home/adrian/.rbot/logs/#doesliverpool'
+  calendar:
+    # URL for the events calendar iCal feed
+    url: "https://www.example.com/calendar/ical/basic.ics"
+    # If your calendar uses HTTPS rather than HTTP, set this to true
+    url_is_https: true
+  issues:
+    # URL for the issue list
+    # NB: This is likely only to work with Github
+    url: "https://api.github.com/repos/doesliverpool/somebody-should/issues"
+    # If your issue list uses HTTPS rather than HTTP, set this to true
+    url_is_https: true
+output:
+  # Title template for the blog post
+  # Available substitutions are "today" "yesterday" and "week_number"
+  title: "Week #{week_number}"
+  # Location of the blog XML-RPC endpoint
+  blog_server: 
+    server: "mydomain.com"
+    xmlrpc_endpoint: "/xmlrpc.php"
+    username: "myuser"
+    password: "secret_password"
+  # Mail server details
+  mail:
+    server: 'smtp.mydomain.com'
+    port: 587
+    domain: 'mydomain.com'
+    user: 'my email username'
+    password: 'secret password'
+    auth_type: :login
+    from_address: "myemail@mydomain.com"
+    long_from_address: "whotoinform@mydomain.com"
+    notify_addresses:
+      - "whotoinform@mydomain.com"
+    long_notify_addresses:
+      - "Person To Inform <whotoinform@mydomain.com>"
+    # Subject and body of the notification email
+    subject: "Weeknotes"
+    body:
+      <p>I've prepared the weeknotes for this week.  Someone needs to log into <a href="http://doesliverpool.com/wp-admin/edit.php">http://doesliverpool.com/wp-admin/edit.php</a>, check them over (particularly the calendar section), come up with a better title, and publish the blog post.</p>
+
+      <p>Then tweet about it from @DoESLiverpool and cut-and-paste the weeknotes blog post into an email to the DoES Liverpool Google Group.</p>
+  # Various canned sections of the blog post to explain/introduce each section
+  preambles:
+    intro: 
+      <p><em>Each week we'll endeavour to publish some details of the interesting things that members of DoES Liverpool have been up to over the past seven days.  You can find out a bit more about them in <a href=\"http://doesliverpool.com/uncategorized/talking-about-ourselves/\">our introductory post</a>.</em></p>
+      <p><em>And remember, if you're involved with DoES Liverpool at all, let us know what you get up to so we can include it here!</em></p>
+    outro: 
+      <h3>Community Content</h3>
+      <p>DoES exists to support the community that uses DoES. If you use DoES, then you are part of that community. If you would like to publicise something related to DoES, you can email <a href=\"mailto:hello@doesliverpool.com\">hello@doesliverpool.com</a> with the formatted content for us to use as a new blog post. Tell us what you're up to, and we'll show the world what epic stuff happens at DoES!</p>
+    issues: 
+      <h3>Somebody Should</h3>
+      <p>The DoES Liverpool to-do list is stored in the <a href='https://github.com/DoESLiverpool/somebody-should/issues'>issues of our Somebody Should repository</a> on github. Head over there if there's something you'd like to report, or if you want to help out fixing things.</p>
+
