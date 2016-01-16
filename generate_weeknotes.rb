@@ -268,7 +268,7 @@ puts "Saving draft blog post..."
 content = output_settings["preambles"]["intro"]
 unless weeknotes.empty?
   content = content + "\n<h3>Things of Note</h3>"
-  content = content + "\n<ul>"
+  content = content + "\n<ul class=\"weeknotes\">"
   weeknotes.each do |w|
     content = content + "\n" + w.html
   end
@@ -372,8 +372,8 @@ else
   end
 
   unless output_settings["blog_folder"].nil?
-    filename = post["title"].gsub(/ /, "-")
-    File.open("#{output_settings['blog_folder']}#{filename}", "w") do |draft|
+    filename = post["title"].gsub(/ /, "-").downcase
+    File.open("#{output_settings['blog_folder']}#{filename}.html", "w") do |draft|
       draft.puts "---"
       draft.puts "layout: post"
       draft.puts "title: #{post['title']}"
