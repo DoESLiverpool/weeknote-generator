@@ -96,7 +96,7 @@ unless input_settings["twitter"].nil?
   end
   settings["tags"].each do |tag|
     twitter_client.search("##{tag}", :count => 100, :result_type => "recent").each do |tweet|
-      if tweet.created_at >= start_of_last_week && tweet.created_at <= end_of_last_week
+      if tweet.created_at >= start_of_last_week && tweet.created_at <= end_of_last_week && !tweet.retweet?
         if tweet.user.following? || tweet.user.id == input_settings["twitter"]["id"]
           # It's a tweet in the past week containing "#weeknotes",
           # from someone we're following (or from us!)
