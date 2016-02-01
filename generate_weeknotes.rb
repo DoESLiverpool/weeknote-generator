@@ -1,4 +1,5 @@
 #!/usr/bin/ruby
+#encoding: utf-8
 # generate-weeknotes
 # Script to find mentions of #weeknotes on @DoESLiverpool's @mentions stream
 # and in the #doesliverpool IRC channel, then output them in a format ready
@@ -247,7 +248,7 @@ unless input_settings["issues"].nil?
         closed_issues.push(issue)
         # Find out who closed it
         detail_uri = URI.parse(issue["url"])
-        puts detail_uri.inspect
+        #puts detail_uri.inspect
         detail_http = Net::HTTP.new(detail_uri.host, detail_uri.port)
         detail_http.use_ssl = true
         detail_req = Net::HTTP::Get.new(detail_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
@@ -270,7 +271,7 @@ unless weeknotes.empty?
   content = content + "\n<h3>Things of Note</h3>"
   content = content + "\n<ul class=\"weeknotes\">"
   weeknotes.each do |w|
-    content = content + "\n" + w.html
+    content = content + "\n" + w.html.force_encoding("UTF-8")
   end
   content = content + "\n</ul>"
 end
@@ -278,7 +279,7 @@ unless input_settings["calendar"].nil?
   content = content + "\n<h3>Coming Up in the Next Week</h3>"
   content = content + "\n<table>"
   events.each do |ev|
-    content = content + "\n" + ev.html
+    content = content + "\n" + ev.html.force_encoding("UTF-8")
   end
   content = content + "\n</table>"
 end
