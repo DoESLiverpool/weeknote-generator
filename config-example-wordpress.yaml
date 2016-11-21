@@ -53,6 +53,7 @@ output:
     xmlrpc_endpoint: "/xmlrpc.php"
     username: "myuser"
     password: "secret_password"
+    use_ssl: false
   # Mail server details
   mail:
     server: 'smtp.mydomain.com'

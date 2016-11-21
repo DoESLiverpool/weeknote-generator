@@ -360,7 +360,7 @@ if settings["testing"] == true
 else
   unless output_settings["blog_server"].nil?
     # initialize the connection
-    connection = XMLRPC::Client.new(output_settings["blog_server"]["server"], output_settings["blog_server"]["xmlrpc_endpoint"])
+    connection = XMLRPC::Client.new(output_settings["blog_server"]["server"], output_settings["blog_server"]["xmlrpc_endpoint"], nil, nil, nil, nil, nil, output_settings["blog_server"]["use_ssl"])
     
     # make the call to publish a new post
     connection.call(
