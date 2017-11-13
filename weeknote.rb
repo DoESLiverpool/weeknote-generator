@@ -22,7 +22,7 @@ class Weeknote
     # Expand any pictures
     tweet.media.each do |m|
       # FIXME This probably won't work when we get a non-picture media type
-      if tweet_text.gsub!(m.url, "<a href=\"http://#{m.display_url}\">#{m.display_url}</a> <div class=\"weeknote-image\"><img src=\"#{m.media_url}\" width=\"#{m.sizes[:medium].w}\" height=\"#{m.sizes[:medium].h}\"></div>") == nil
+      if tweet_text.gsub!(m.url, "<a href=\"https://#{m.display_url}\">#{m.display_url}</a> <div class=\"weeknote-image\"><img src=\"#{m.media_url}\" width=\"#{m.sizes[:medium].w}\" height=\"#{m.sizes[:medium].h}\"></div>") == nil
         # We didn't perform any substitution, so this will be one of the
 	# additional images (that Twitter doesn't include in the text!)
 	tweet_text = tweet_text + " <div class=\"weeknote-image\"><img src=\"#{m.media_url}\" width=\"#{m.sizes[:medium].w}\" height=\"#{m.sizes[:medium].h}\"></div>"
@@ -30,7 +30,7 @@ class Weeknote
     end
     # Expand any twitter names, using friendly names rather than twitter handles
     tweet.user_mentions.each do |u|
-      tweet_text.gsub!("@#{u.screen_name}", "<a href=\"http://twitter.com/#{u.screen_name}\">#{u.name}</a>")
+      tweet_text.gsub!("@#{u.screen_name}", "<a href=\"https://twitter.com/#{u.screen_name}\">#{u.name}</a>")
     end
     html = "<li><a href=\"https://twitter.com/#{tweet.user.screen_name}/status/#{tweet.id}\">#{tweet.user.name}</a>: #{tweet_text}</li>"
     # Expand any hashtags
