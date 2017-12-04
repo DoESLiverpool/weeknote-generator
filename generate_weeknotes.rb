@@ -212,6 +212,7 @@ closed_count = 0
 
 # Download all the issues.  They're paginated, so we need to make multiple requests
 unless input_settings["issues"].nil?
+  featured_issues = []
   issues = []
   page_num = 1
     
@@ -231,7 +232,6 @@ unless input_settings["issues"].nil?
     issues = JSON.parse(issue_data.body)
     
     issues.each do |issue|
-      #puts issue.inspect
       created_at = Time.parse(issue["created_at"])
       if created_at <= end_of_last_week
         # Only count issues that existed last week
@@ -243,6 +243,15 @@ unless input_settings["issues"].nil?
       end
       if created_at >= start_of_last_week && created_at <= end_of_last_week
         new_issues.push(issue)
+      elsif issue["closed_at"].nil? && !input_settings["issues"]["featured_labels"].nil?
+        # This isn't new, and isn't closed
+        # Is it one we might want to feature?
+        issue["labels"].each do |label|
+          if input_settings["issues"]["featured_labels"].include?(label["name"])
+            # It has a label that we want to feature, so include it for consideration
+            featured_issues.push(issue)
+          end
+        end
       end
       closed_at = nil || issue["closed_at"] && Time.parse(issue["closed_at"])
       if closed_at && closed_at >= start_of_last_week && closed_at <= end_of_last_week
@@ -255,7 +264,6 @@ unless input_settings["issues"].nil?
         detail_req = Net::HTTP::Get.new(detail_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
         detail_data = detail_http.request(detail_req)
         detail = JSON.parse(detail_data.body)
-        puts detail["closed_by"]["login"]
         issue_closers.push(detail["closed_by"])
       end
     end
@@ -263,6 +271,9 @@ unless input_settings["issues"].nil?
     # Move onto the next page
     page_num += 1
   end
+
+  # Choose some feature issues
+  featured_issues = featured_issues.sample(5)
 end
 
 # Output blog post data
@@ -306,6 +317,12 @@ unless input_settings["issues"].nil?
       end
     end
     content = content + "\n</ul>"
+  end
+
+  featured_issues.each do |i|
+    url = i["html_url"]
+    title = i["title"]
+    content = content + "\n<p>Featured issue: <a href='#{url}'>#{title}</a>.</p>"
   end
   
   if closed_issues.empty?

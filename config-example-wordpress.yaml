@@ -43,6 +43,10 @@ input:
     url: "https://api.github.com/repos/doesliverpool/somebody-should/issues"
     # If your issue list uses HTTPS rather than HTTP, set this to true
     url_is_https: true
+    # Choose an issue at random from any with these labels to be "featured"
+    featured_labels:
+      - "1 - Must DoES"
+      - "DoES Move"
 output:
   # Title template for the blog post
   # Available substitutions are "today" "yesterday" and "week_number"
