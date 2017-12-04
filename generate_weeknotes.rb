@@ -322,7 +322,7 @@ unless input_settings["issues"].nil?
   featured_issues.each do |i|
     url = i["html_url"]
     title = i["title"]
-    content = content + "\n<p>Featured issue: <a href='#{url}'>#{title}</a>.</p>"
+    content = content + "\n<p><strong>Featured issue:</strong> <a href='#{url}'>#{title}</a>.  Can we move this on or close it?</p>"
   end
   
   if closed_issues.empty?
