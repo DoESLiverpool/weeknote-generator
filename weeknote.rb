@@ -22,10 +22,10 @@ class Weeknote
     # Expand any pictures
     tweet.media.each do |m|
       # FIXME This probably won't work when we get a non-picture media type
-      if tweet_text.gsub!(m.url, "<a href=\"https://#{m.display_url}\">#{m.display_url}</a> <div class=\"weeknote-image\"><img src=\"#{m.media_url}\" width=\"#{m.sizes[:medium].w}\" height=\"#{m.sizes[:medium].h}\"></div>") == nil
+      if tweet_text.gsub!(m.url, "<a href=\"https://#{m.display_url}\">#{m.display_url}</a> <div class=\"weeknote-image\"><img src=\"#{m.media_url_https}\" width=\"#{m.sizes[:medium].w}\" height=\"#{m.sizes[:medium].h}\"></div>") == nil
         # We didn't perform any substitution, so this will be one of the
 	# additional images (that Twitter doesn't include in the text!)
-	tweet_text = tweet_text + " <div class=\"weeknote-image\"><img src=\"#{m.media_url}\" width=\"#{m.sizes[:medium].w}\" height=\"#{m.sizes[:medium].h}\"></div>"
+	tweet_text = tweet_text + " <div class=\"weeknote-image\"><img src=\"#{m.media_url_https}\" width=\"#{m.sizes[:medium].w}\" height=\"#{m.sizes[:medium].h}\"></div>"
       end
     end
     # Expand any twitter names, using friendly names rather than twitter handles
