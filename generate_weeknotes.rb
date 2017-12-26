@@ -280,7 +280,7 @@ end
 puts "Saving draft blog post..."
 content = output_settings["preambles"]["intro"]
 unless weeknotes.empty?
-  content = content + "\n<h3>Things of Note</h3>"
+  content = content + "\n<h3 id='weeknotes'>Things of Note</h3>"
   content = content + "\n<ul class=\"weeknotes\">"
   weeknotes.each do |w|
     content = content + "\n" + w.html.force_encoding("UTF-8")
@@ -288,7 +288,7 @@ unless weeknotes.empty?
   content = content + "\n</ul>"
 end
 unless input_settings["calendar"].nil?
-  content = content + "\n<h3>Coming Up in the Next Week</h3>"
+  content = content + "\n<h3 id='upcoming'>Coming Up in the Next Week</h3>"
   content = content + "\n<table>"
   events.each do |ev|
     content = content + "\n" + ev.html.force_encoding("UTF-8")

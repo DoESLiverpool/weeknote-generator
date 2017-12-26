@@ -82,5 +82,5 @@ output:
       <h3>Community Content</h3>
       <p>DoES exists to support the community that uses DoES. If you use DoES, then you are part of that community. If you would like to publicise something related to DoES, you can email <a href=\"mailto:hello@doesliverpool.com\">hello@doesliverpool.com</a> with the formatted content for us to use as a new blog post. Tell us what you're up to, and we'll show the world what epic stuff happens at DoES!</p>
     issues: 
-      <h3>Somebody Should</h3>
+      <h3 id='somebodyshould'>Somebody Should</h3>
       <p>The DoES Liverpool to-do list is stored in the <a href='https://github.com/DoESLiverpool/somebody-should/issues'>issues of our Somebody Should repository</a> on github. Head over there if there's something you'd like to report, or if you want to help out fixing things.</p>
