@@ -20,6 +20,9 @@ class WeeknoteEvent
       start_time = next_occurrence.start_time
       finish_time = next_occurrence.finish_time
     end
+    # Ensure we show local times
+    start_time = start_time.to_time.localtime
+    finish_time = finish_time.to_time.localtime
     html = "<tr>"
     # Because the %l in strftime is blank padded, if any of the hour
     # values are < 10 we'll get an extra blank space we don't want
