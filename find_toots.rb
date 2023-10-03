@@ -59,7 +59,7 @@ unless consent_required.empty?
         toots = consent_required[u].collect { |t| t['url'] }.join(", ")
         toots_plural = consent_required[u].length > 1 ? "s" : ""
         # FIXME and only ask every now and then (maybe?)
-        message = "Hi, @#{u}, we spotted your post#{toots_plural} #{toots} which we'd like to include in our weeknotes blog post.  Can we use it for all things relating to DoES Liverpool; just for weeknotes; or not at all?  Vote or reply [All / Weeknotes / No].  We won't bother you again after this.  Thanks!"
+        message = "Hi, @#{u}, we spotted your post#{toots_plural} #{toots} which we'd like to include in our weeknotes blog post.  Can we use it (and future #weeknotes posts) for all things relating to DoES Liverpool; just for our weeknotes; or not at all?  Vote or reply [All / Weeknotes / No].  We won't bother you again after this.  Thanks!"
         # Send the message to the user
 # FIXME For now just spam me :-)
 if u == "amcewen@mastodon.me.uk"

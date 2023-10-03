@@ -3,4 +3,6 @@ source 'https://rubygems.org'
 gem 'twitter'
 gem 'instagram'
 gem 'ri_cal'
-gem 'simple-rss'
+gem 'rest-client'
+
+gem "sanitize", "~> 6.1"
