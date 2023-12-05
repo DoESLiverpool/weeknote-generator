@@ -110,7 +110,15 @@ if u[:user] == "amcewen@mastodon.me.uk"
 else
                 puts "#{u} => #{message}"
 end
-                # FIXME Now process any pending messages from that user!
+                # Now process any pending messages from that user!
+                user_consent_folder = File.join(input_settings['mastodon']['consent_folder'], u[:user])
+                if u[:consent] == "all" or u[:consent] == "weeknotes"
+                    # Move the toots to be published
+                    FileUtils.mv Dir.glob(File.join(user_consent_folder, "*")), File.join(input_settings['mastodon']['publication_folder'], u[:consent])
+                end
+                # Remove the user's pending consent folder (and any remaining
+                # toots if consent wasn't granted)
+                FileUtils.rm_rf user_consent_folder
             end
         else
             puts "Strange consent entry: #{u}"

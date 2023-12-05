@@ -2,9 +2,11 @@ require 'rubygems'
 require 'json'
 require 'yaml'
 require 'open-uri'
+require 'uri'
 require 'rest-client'
 
 tag_url = "https://does.social/api/v1/timelines/tag/weeknotes"
+FOLLOWING_URL = "https://does.social/api/v1/accounts/relationships?id[]="
 
 # Read in config
 settings = nil
@@ -23,20 +25,46 @@ consent = YAML.load_file(input_settings['mastodon']['consent_file'])
 
 recent_statuses = JSON.parse(URI.open(tag_url, "Authorization" => "Bearer #{bearer_token}").read)
 
+def ensure_folder_exists(folder_path)
+    unless File.exist?(folder_path)
+        puts "Creating directory #{folder_path}"
+        Dir.mkdir(folder_path)
+    end
+    File.exist?(folder_path) && File.directory?(folder_path)
+end
+
+# Save the toot given in toot in the folder given in location
+def save_toot(toot, location)
+    filebase = URI(toot["uri"]).hash.to_s
+    File.write File.join(location, "#{filebase}.json"), JSON.pretty_generate(toot)
+end
+
+def are_we_following?(auth, user_id)
+    relationship = JSON.parse(URI.open(FOLLOWING_URL+user_id, "Authorization" => "Bearer #{auth}").read)
+    relationship && !relationship.empty? && relationship[0]['following'] == true
+end
+
+
+# Make sure the relevant folders we want exist
+ensure_folder_exists(input_settings['mastodon']['consent_folder']) or die "Problem with setting for #{input_settings['mastodon']['consent_folder']}"
+ensure_folder_exists(input_settings['mastodon']['publication_folder']) or die "Problem with setting for #{input_settings['mastodon']['publication_folder']}"
+ensure_folder_exists("#{input_settings['mastodon']['publication_folder']}/all") or die "Problem with setting for #{input_settings['mastodon']['publication_folder']}/all"
+ensure_folder_exists("#{input_settings['mastodon']['publication_folder']}/weeknotes") or die "Problem with setting for #{input_settings['mastodon']['publication_folder']}/weeknotes"
+
 consent_required = {}
 recent_statuses.each do |s|
+    if are_we_following?(bearer_token, s['account']['id'])
     # FIXME check if it's one we've not seen
-    if true #s['created_at'] would give us the publication date
+    #s['created_at'] would give us the publication date
         # Get the status details
 
         # See if the user is one we've already had an answer from
         u = consent.index { |x| x[:user] == s["account"]["acct"] }
         unless u.nil?
             # We've already heard from them
-            if consent[u][:consent] == "all"
-                # FIXME Save the status for inclusion in the weeknotes
-            elsif consent[u][:consent] == "weeknotes"
-                # FIXME Save the status for inclusion in the weeknotes
+            if consent[u][:consent] == "all" or consent[u][:consent] == "weeknotes"
+                # Save the status for inclusion in the weeknotes
+                save_toot(s, File.join(input_settings['mastodon']['publication_folder'], consent[u][:consent]))
             else
                 puts "We don't have consent for #{s['url']}"
             end
@@ -47,7 +75,11 @@ recent_statuses.each do |s|
                 consent_required[s['account']['acct']] = []
             end
             consent_required[s['account']['acct']].push(s)
-            # FIXME We should save this status in a consent-pending area
+            # We should save this status in a consent-pending area
+            user_consent_folder = File.join(input_settings['mastodon']['consent_folder'], s['account']['acct'])
+            if ensure_folder_exists(user_consent_folder)
+                save_toot(s, user_consent_folder)
+            end
         end
     end
 end
