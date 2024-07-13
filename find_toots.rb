@@ -21,14 +21,22 @@ output_settings = settings["output"]
 
 bearer_token = input_settings['mastodon']['bearer_token']
 
-consent = YAML.load_file(input_settings['mastodon']['consent_file'])
+consent = []
+begin
+    consent = YAML.load_file(input_settings['mastodon']['consent_file'])
+rescue Exception => e
+    puts "Couldn't load consent file #{input_settings['mastodon']['consent_file']}, error #{e.inspect}"
+end
 
 recent_statuses = JSON.parse(URI.open(tag_url, "Authorization" => "Bearer #{bearer_token}").read)
 
 def ensure_folder_exists(folder_path)
     unless File.exist?(folder_path)
-        puts "Creating directory #{folder_path}"
-        Dir.mkdir(folder_path)
+        # Make any parent folders first
+        if ensure_folder_exists(File.dirname(folder_path))
+            puts "Creating directory #{folder_path}"
+            Dir.mkdir(folder_path)
+        end
     end
     File.exist?(folder_path) && File.directory?(folder_path)
 end
@@ -50,6 +58,10 @@ ensure_folder_exists(input_settings['mastodon']['consent_folder']) or die "Probl
 ensure_folder_exists(input_settings['mastodon']['publication_folder']) or die "Problem with setting for #{input_settings['mastodon']['publication_folder']}"
 ensure_folder_exists("#{input_settings['mastodon']['publication_folder']}/all") or die "Problem with setting for #{input_settings['mastodon']['publication_folder']}/all"
 ensure_folder_exists("#{input_settings['mastodon']['publication_folder']}/weeknotes") or die "Problem with setting for #{input_settings['mastodon']['publication_folder']}/weeknotes"
+ensure_folder_exists("#{input_settings['mastodon']['published_folder']}/weeknotes") or die "Problem with setting for #{input_settings['mastodon']['published_folder']}/weeknotes"
+ensure_folder_exists("#{input_settings['mastodon']['published_folder']}/weeknotes") or die "Problem with setting for #{input_settings['mastodon']['published_folder']}/all"
+ensure_folder_exists("#{input_settings['mastodon']['media_site']['root_folder']}/weeknotes") or die "Problem with setting for #{input_settings['mastodon']['media_site']['root_folder']}/weeknotes"
+ensure_folder_exists("#{input_settings['mastodon']['media_site']['root_folder']}/all") or die "Problem with setting for #{input_settings['mastodon']['media_site']['root_folder']}/all"
 
 consent_required = {}
 recent_statuses.each do |s|
