@@ -252,6 +252,7 @@ unless input_settings["issues"].nil?
     
     issues.each do |issue|
       created_at = Time.parse(issue["created_at"])
+      sleep 3
       if created_at <= end_of_last_week
         # Only count issues that existed last week
         if issue["closed_at"].nil?
