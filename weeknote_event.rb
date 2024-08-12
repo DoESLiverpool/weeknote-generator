@@ -39,7 +39,11 @@ class WeeknoteEvent
       html = html + finish_time.strftime("%A %d %B, ")
       html = html + finish_time.strftime("%l:%M%P").lstrip+"</td>"
     end
-    html = html + "\n<td><a href=\""+ical_ev.description+"\">"+ical_ev.summary.gsub('"', '')+"</a></td>"
+    if ical_ev.description.nil?
+        html = html + "\n<td>"+ical_ev.summary.gsub('"', '')+"</td>"
+    else
+        html = html + "\n<td><a href=\""+ical_ev.description+"\">"+ical_ev.summary.gsub('"', '')+"</a></td>"
+    end
     html = html + "\n</tr>"
     #puts ical_ev.to_s
     WeeknoteEvent.new(start_time, finish_time, html)

@@ -10,11 +10,12 @@ require 'yaml'
 require 'xmlrpc/client'
 require 'net/smtp'
 require 'twitter'
-require 'instagram'
+#require 'instagram'
 require 'time'
 require 'ri_cal'
 require 'net/https'
 require 'json'
+require 'open-uri'
 require './time_start_and_end_extensions'
 require './weeknote'
 require './weeknote_event'
@@ -82,6 +83,24 @@ puts "Calendar from "+start_of_this_week.to_s+" to "+end_of_this_week.to_s
 
 # Start off with no weeknotes
 weeknotes = []
+
+#
+# Get Mastodon weeknotes
+#
+unless input_settings["mastodon"].nil?
+  puts "Checking Mastodon..."
+  # We'll already have the toots downloaded, so just process those
+  ["weeknotes", "all"].each do |consent|
+    Dir.glob(File.join(input_settings['mastodon']['publication_folder'], consent, "*.json")).each do |toot|
+      # Add each toot
+      weeknotes.push(Weeknote.new_from_toot(toot, consent, input_settings['mastodon']['media_site']))
+      # Move it to the published archive now we're dealt with it
+      if ensure_folder_exists(File.join(input_settings['mastodon']['published_folder'], consent))
+        FileUtils.mv toot, File.join(input_settings['mastodon']['published_folder'], consent)
+      end
+    end
+  end
+end
 
 #
 # Get Twitter weeknotes
@@ -233,6 +252,7 @@ unless input_settings["issues"].nil?
     
     issues.each do |issue|
       created_at = Time.parse(issue["created_at"])
+      sleep 3
       if created_at <= end_of_last_week
         # Only count issues that existed last week
         if issue["closed_at"].nil?

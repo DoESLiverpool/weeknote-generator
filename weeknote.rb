@@ -3,6 +3,7 @@
 # Weeknote - simple class to help generating weeknotes blog posts
 # (c) Copyright 2013 Adrian McEwen
 require 'pp'
+require './utils'
 
 class Weeknote
   attr_accessor :created_at, :html
@@ -10,6 +11,35 @@ class Weeknote
   def initialize(created_at, html)
     @created_at = created_at
     @html = html
+  end
+
+  def Weeknote.new_from_toot(toot, consent, media_site)
+    # toot is the filename of a JSON file containing the toot
+    t = JSON.load_file(toot)
+    media_html = ""
+    # Download any images
+    # FIXME We should handle video too
+    t['media_attachments'].each do |m|
+        if m['type'] == "image"
+            # Download it
+            # Ensure the user's directory exists
+            dest_folder = File.join(media_site['root_folder'], consent, t['account']['acct'])
+            if ensure_folder_exists(dest_folder)
+                # wget m['remote_url']
+                dest_file = File.join(dest_folder, File.basename(m['remote_url']))
+                dest_url = URI.join(media_site['root_url'], File.join(consent, t['account']['acct'], File.basename(m['remote_url'])))
+                URI.open(m['remote_url']) do |remote|
+                    File.open(dest_file, 'w') do |dest|
+                        IO.copy_stream(remote, dest)
+                    end
+                end
+                media_html += " <div class=\"weeknote-image\"><img alt=\"#{m['description']}\" src=\"#{dest_url}\" width=\"#{m['meta']['original']['width']}\" height=\"#{m['meta']['original']['height']}\"></div>"
+            end
+        end
+    end
+    username = t["account"]["display_name"]
+    html = "<li><a href=\"#{t['url']}\">#{username}</a>: #{t['content']} #{media_html}</li>"
+    Weeknote.new(t['created_at'], html)
   end
 
   def Weeknote.new_from_tweet(tweet)
