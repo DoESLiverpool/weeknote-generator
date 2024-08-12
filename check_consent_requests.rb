@@ -94,8 +94,6 @@ consent.each do |u|
                 # we've had a reply
                 message = "@#{u[:user]} Thanks for getting back to us!"
                 # Send the message to the user
-# FIXME For now just spam me :-)
-if u[:user] == "amcewen@mastodon.me.uk"
                 puts "Spamming #{u} => #{message}"
                 thanks_reply["status"] = message
                 thanks_reply["visibility"] = "direct"
@@ -107,9 +105,6 @@ if u[:user] == "amcewen@mastodon.me.uk"
                     puts resp.code
                     puts resp.body
                 end
-else
-                puts "#{u} => #{message}"
-end
                 # Now process any pending messages from that user!
                 user_consent_folder = File.join(input_settings['mastodon']['consent_folder'], u[:user])
                 if u[:consent] == "all" or u[:consent] == "weeknotes"
