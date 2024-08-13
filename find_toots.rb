@@ -101,7 +101,7 @@ unless consent_required.empty?
         message = "Hi, @#{u}, we spotted your post#{toots_plural} #{toots} which we'd like to include in our weeknotes blog post.  Can we use it (and future #weeknotes posts) for all things relating to DoES Liverpool; just for our weeknotes; or not at all?  Vote or reply [All / Weeknotes / No].  We won't bother you again after this.  Thanks!"
         # Send the message to the user
         puts "Spamming #{u} => #{message}"
-        payload = { status: message, poll: { options: ["all", "just weeknotes", "no"], expires_in: 3600}, visibility: "direct" }
+        payload = { status: message, poll: { options: ["all", "just weeknotes", "no"], expires_in: 1209600 }, visibility: "direct" }
         post_status_url = "https://does.social/api/v1/statuses"
         resp = RestClient.post(post_status_url, payload, { "Authorization": "Bearer #{bearer_token}"})
         if resp.code == 200
