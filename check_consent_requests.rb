@@ -10,12 +10,12 @@ status_url_tamplate = 'https://does.social/api/v1/statuses/%s'
 # This URL gets (when the ID is inserted) details of any replies
 status_context_url_tamplate = 'https://does.social/api/v1/statuses/%s/context'
 # This URL lets us post toots
-post_status_url = "https://does.social/api/v1/statuses"
+POST_STATUS_URL = "https://does.social/api/v1/statuses"
 
 # Send a message to @amcewen to alert him to an error
 def toot_error(message)
     payload = { status: "@amcewen@mastodon.me.uk #{message}", visibility: "direct" }
-    resp = RestClient.post(post_status_url, payload, { "Authorization": "Bearer #{bearer_token}"})
+    resp = RestClient.post(POST_STATUS_URL, payload, { "Authorization": "Bearer #{BEARER_TOKEN}"})
 end
 
 # Read in config
@@ -29,7 +29,7 @@ end
 input_settings = settings["input"]
 output_settings = settings["output"]
 
-bearer_token = input_settings['mastodon']['bearer_token']
+BEARER_TOKEN = input_settings['mastodon']['bearer_token']
 
 consent = YAML.load_file(input_settings['mastodon']['consent_file'])
 
@@ -41,7 +41,7 @@ consent.each do |u|
             thanks_reply = nil
 
             status_url = status_url_tamplate % u[:consent_request]
-            status_info = JSON.parse(URI.open(status_url, "Authorization" => "Bearer #{bearer_token}").read)
+            status_info = JSON.parse(URI.open(status_url, "Authorization" => "Bearer #{BEARER_TOKEN}").read)
             #pp status_info
             # Check for poll responses
             if status_info["poll"]["votes_count"] > 1
@@ -61,7 +61,7 @@ consent.each do |u|
             if u[:consent].nil?
                 # There wasn't a vote, look for a reply
                 status_context_url = status_context_url_tamplate % u[:consent_request]
-                status_context = JSON.parse(URI.open(status_context_url, "Authorization" => "Bearer #{bearer_token}").read)
+                status_context = JSON.parse(URI.open(status_context_url, "Authorization" => "Bearer #{BEARER_TOKEN}").read)
                 #pp status_context
 
                 # Search for any children with responses
@@ -97,7 +97,7 @@ consent.each do |u|
                 puts "Spamming #{u} => #{message}"
                 thanks_reply["status"] = message
                 thanks_reply["visibility"] = "direct"
-                resp = RestClient.post(post_status_url, thanks_reply, { "Authorization": "Bearer #{bearer_token}"})
+                resp = RestClient.post(POST_STATUS_URL, thanks_reply, { "Authorization": "Bearer #{BEARER_TOKEN}"})
                 if resp.code == 200
                 else
                     toot_error("Error sending consent request to #{u}: #{message}")
