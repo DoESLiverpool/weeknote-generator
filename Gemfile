@@ -6,5 +6,6 @@ gem 'xmlrpc'
 gem 'ri_cal'
 gem 'rest-client'
 gem 'net-smtp'
+gem 'rexml'
 
 gem "sanitize", "~> 6.1"
