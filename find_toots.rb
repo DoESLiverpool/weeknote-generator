@@ -57,7 +57,8 @@ ensure_folder_exists("#{input_settings['mastodon']['media_site']['root_folder']}
 
 consent_required = {}
 recent_statuses.each do |s|
-    if are_we_following?(bearer_token, s['account']['id'])
+    # Only save toots from people we follow, or ourselves
+    if are_we_following?(bearer_token, s['account']['id']) or input_settings['mastodon']['account_id'] == s['account']['id']
         # Check if it's one we've not seen
         if Time.parse(s['created_at']) >= start_time - input_settings['mastodon']['check_frequency']
             # Get the status details
