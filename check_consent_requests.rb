@@ -71,15 +71,15 @@ consent.each do |u|
                         # Strip out any unwanted HTML to just get the text
                         reply = Sanitize.fragment(d['content'], Sanitize::Config::RESTRICTED)
                         #puts reply
-                        if reply.include?("no")
+                        if reply[/\bno\b/i]
                             u[:consent] = "no"
                             u[:consent_link] = d['url']
                             thanks_reply = { "in_reply_to_id": d["id"], "in_reply_to_account_id": d["account"]["id"] }
-                        elsif reply.include?("weeknotes")
+                        elsif reply[/\bweeknotes\b/i]
                             u[:consent] = "weeknotes"
                             u[:consent_link] = d['url']
                             thanks_reply = { "in_reply_to_id": d["id"], "in_reply_to_account_id": d["account"]["id"] }
-                        elsif reply.include?("all")
+                        elsif reply[/\ball\b/i]
                             u[:consent] = "all"
                             u[:consent_link] = d['url']
                             thanks_reply = { "in_reply_to_id": d["id"], "in_reply_to_account_id": d["account"]["id"] }
