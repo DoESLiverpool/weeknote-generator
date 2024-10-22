@@ -39,7 +39,7 @@ class Weeknote
                         IO.copy_stream(remote, dest)
                     end
                 end
-                media_html += " <div class=\"weeknote-image\"><img alt=\"#{m['description']}\" src=\"#{dest_url}\" width=\"#{m['meta']['original']['width']}\" height=\"#{m['meta']['original']['height']}\"></div>"
+                media_html += " <figure class=\"weeknote-image\"><img alt=\"#{m['description']}\" src=\"#{dest_url}\" width=\"#{m['meta']['original']['width']}\" height=\"#{m['meta']['original']['height']}\"></figure>"
             end
         end
     end
