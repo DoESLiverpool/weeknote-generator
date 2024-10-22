@@ -25,10 +25,16 @@ class Weeknote
             # Ensure the user's directory exists
             dest_folder = File.join(media_site['root_folder'], consent, t['account']['acct'])
             if ensure_folder_exists(dest_folder)
-                # wget m['remote_url']
-                dest_file = File.join(dest_folder, File.basename(m['remote_url']))
-                dest_url = URI.join(media_site['root_url'], File.join(consent, t['account']['acct'], File.basename(m['remote_url'])))
-                URI.open(m['remote_url']) do |remote|
+                # Default to the original URL, but if it's from "our" account (or maybe our server?) then
+                # `remote_url` will be blank, and we should use `url` instead then.
+                media_url = m['remote_url']
+                if media_url.nil?
+                    media_url = m['url']
+                end
+                # wget media_url
+                dest_file = File.join(dest_folder, File.basename(media_url))
+                dest_url = URI.join(media_site['root_url'], File.join(consent, t['account']['acct'], File.basename(media_url)))
+                URI.open(media_url) do |remote|
                     File.open(dest_file, 'w') do |dest|
                         IO.copy_stream(remote, dest)
                     end
