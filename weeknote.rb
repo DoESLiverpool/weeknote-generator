@@ -20,27 +20,29 @@ class Weeknote
     # Download any images
     # FIXME We should handle video too
     t['media_attachments'].each do |m|
-        if m['type'] == "image"
-            # Download it
-            # Ensure the user's directory exists
-            dest_folder = File.join(media_site['root_folder'], consent, t['account']['acct'])
-            if ensure_folder_exists(dest_folder)
-                # Default to the original URL, but if it's from "our" account (or maybe our server?) then
-                # `remote_url` will be blank, and we should use `url` instead then.
-                media_url = m['remote_url']
-                if media_url.nil?
-                    media_url = m['url']
-                end
-                # wget media_url
-                dest_file = File.join(dest_folder, File.basename(media_url))
-                dest_url = URI.join(media_site['root_url'], File.join(consent, t['account']['acct'], File.basename(media_url)))
-                URI.open(media_url) do |remote|
-                    File.open(dest_file, 'w') do |dest|
-                        IO.copy_stream(remote, dest)
-                    end
-                end
-                media_html += " <figure class=\"weeknote-image\"><img alt=\"#{m['description']}\" src=\"#{dest_url}\" width=\"#{m['meta']['original']['width']}\" height=\"#{m['meta']['original']['height']}\"></figure>"
+        # Download it
+        # Ensure the user's directory exists
+        dest_folder = File.join(media_site['root_folder'], consent, t['account']['acct'])
+        if ensure_folder_exists(dest_folder)
+            # Default to the original URL, but if it's from "our" account (or maybe our server?) then
+            # `remote_url` will be blank, and we should use `url` instead then.
+            media_url = m['remote_url']
+            if media_url.nil?
+                media_url = m['url']
             end
+            # wget media_url
+            dest_file = File.join(dest_folder, File.basename(media_url))
+            dest_url = URI.join(media_site['root_url'], File.join(consent, t['account']['acct'], File.basename(media_url)))
+            URI.open(media_url) do |remote|
+                File.open(dest_file, 'w') do |dest|
+                    IO.copy_stream(remote, dest)
+                end
+            end
+        end
+        if m['type'] == "image"
+            media_html += " <figure class=\"weeknote-image\"><img alt=\"#{m['description']}\" src=\"#{dest_url}\" width=\"#{m['meta']['original']['width']}\" height=\"#{m['meta']['original']['height']}\"></figure>"
+        elsif m['type'] == "video"
+            media_html += " <figure class=\"weeknote-image\"><video width=\"100%\" controls=\"controls\" loop autoplay=\"false\"><source type=\"video/mp4\" src=\"#{dest_url}\"></source><p>#{m['description']}</p></video></figure>"
         end
     end
     username = t["account"]["display_name"]
