@@ -34,3 +34,11 @@ We run the code under `Docker` when deployed.
 1. Set up cron to run:
    * `docker run [add volume arguments] weeknotes [operation]`
 
+## Manually Adding Toots
+
+If you need to pull in a Mastodon post that hasn't been picked up automatically (e.g. if it was posted as `unlisted` or you forgot the `#weeknotes` tag) then you can download them manually.
+
+1. Get the status ID from the post in the web interface.  It's the long number at the end of the URL for it.  NB: I'm not sure what the case would be for posts made on other servers, which are then federated!
+1. Run `curl -H 'Authorization: Bearer INSERT-BEARER-TOKEN-HERE' https://MASTODON-SERVER/api/v1/statuses/STATUS-ID > mastodon-ready-to-publish/all/STATUS-ID.json`
+
+That will store the JSON version of the post in the right place for the `generate-weeknotes.rb` script to pick it up next time it generates the weeknotes.
