@@ -242,7 +242,7 @@ unless input_settings["issues"].nil?
       issue_uri = URI.parse(input_settings["issues"]["url"]+url_params)
       issue_http = Net::HTTP.new(issue_uri.host, issue_uri.port)
       issue_http.use_ssl = true
-      issue_req = Net::HTTP::Get.new(issue_uri.request_uri, {'User-Agent' => "weeknote-generator/1.0"})
+      issue_req = Net::HTTP::Get.new(issue_uri.request_uri, {'Authorization' => "Bearer #{input_settings['issues']['auth_token']}", 'User-Agent' => "weeknote-generator/1.0"})
       issue_data = issue_http.request(issue_req)
     else
       issue_data = Net::HTTP.get_response(URI.parse(input_settings["issues"]["url"]+url_params))
@@ -252,7 +252,7 @@ unless input_settings["issues"].nil?
     
     issues.each do |issue|
       created_at = Time.parse(issue["created_at"])
-      sleep 3
+      sleep 1
       if created_at <= end_of_last_week
         # Only count issues that existed last week
         if issue["closed_at"].nil?

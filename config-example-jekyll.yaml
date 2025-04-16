@@ -43,6 +43,8 @@ input:
     url: "https://api.github.com/repos/doesliverpool/somebody-should/issues"
     # If your issue list uses HTTPS rather than HTTP, set this to true
     url_is_https: true
+    # A fine-grained personal access token with permission to access issues for the repository
+    auth_token: PASTE-AUTH-TOKEN-HERE
     # Choose an issue at random from any with these labels to be "featured"
     featured_labels:
       - "1 - Must DoES"
