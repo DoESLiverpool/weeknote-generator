@@ -91,4 +91,5 @@ output:
     issues: 
       <h3 id='somebodyshould'>Somebody Should</h3>
       <p>The DoES Liverpool to-do list is stored in the <a href='https://github.com/DoESLiverpool/somebody-should/issues'>issues of our Somebody Should repository</a> on github. Head over there if there's something you'd like to report, or if you want to help out fixing things.</p>
+      <p><ul><li><a href='https://github.com/DoESLiverpool/somebody-should/issues'>See all the issues…</a></li></ul></p>
 
