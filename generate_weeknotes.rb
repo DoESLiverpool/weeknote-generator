@@ -309,6 +309,7 @@ unless weeknotes.empty?
 end
 unless input_settings["calendar"].nil?
   content = content + "\n<h3 id='upcoming'>Coming Up in the Next Week</h3>"
+  content = content + "\n<p>These are the events booked in for this week.  Click the link or contact the event organiser for more details.  Want to run something yourself?  Check the <a href='https://doesliverpool.com/services/host-your-own-events/'>host your own events</a> page on our website.</p>"
   content = content + "\n<table>"
   events.each do |ev|
     content = content + "\n" + ev.html.force_encoding("UTF-8")
