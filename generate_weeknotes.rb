@@ -231,6 +231,7 @@ closed_issues = []
 issue_closers = []
 open_count = 0
 closed_count = 0
+updated_count = 0
 
 # Download all the issues.  They're paginated, so we need to make multiple requests
 unless input_settings["issues"].nil?
@@ -262,6 +263,12 @@ unless input_settings["issues"].nil?
           open_count += 1
         else
           closed_count += 1
+        end
+      end
+      unless issue["updated_at"].nil?
+        updated_at = Time.parse(issue["updated_at"])
+        if updated_at >= start_of_last_week && updated_at <= end_of_last_week
+          updated_count += 1
         end
       end
       if created_at >= start_of_last_week && created_at <= end_of_last_week
@@ -321,7 +328,7 @@ unless input_settings["calendar"].nil?
 end
 unless input_settings["issues"].nil?
   content = content + "\n#{output_settings["preambles"]["issues"]}"
-  content = content + "\n<p>Issue counts: #{open_count} open, #{closed_count} closed</p>"
+  content = content + "\n<p>Issue counts: #{open_count} open; #{closed_count} closed; #{updated_count} updated this week</p>"
   if new_issues.empty?
     content = content + "\n<p>No new issues</p>"
   else
