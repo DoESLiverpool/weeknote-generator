@@ -213,8 +213,11 @@ unless input_settings["calendar"].nil?
       # Crude type conversion because event times are DateTime objects
       # and the [start|end]_of_this_week variables are Time objects
       event_start = Time.parse(event_start.to_s)
-      if event_start >= start_of_this_week && event_start <= end_of_this_week
-        events.push(WeeknoteEvent.new_from_ical(ev, recurring_occurrence))
+      if event_start >= start_of_this_week && event_start <= end_of_this_week 
+        # Only add events that have a title and aren't private (those have a summary of "Busy")
+        unless ev.summary.nil? || ev.summary == "Busy"
+          events.push(WeeknoteEvent.new_from_ical(ev, recurring_occurrence))
+        end
       end
     end
   end

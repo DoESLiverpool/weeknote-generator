@@ -39,6 +39,9 @@ class WeeknoteEvent
       html = html + finish_time.strftime("%A %d %B, ")
       html = html + finish_time.strftime("%l:%M%P").lstrip+"</td>"
     end
+    if ical_ev.summary.nil?
+      ical_ev.summary = "Untitled"
+    end
     if ical_ev.description.nil?
         html = html + "\n<td>"+ical_ev.summary.gsub('"', '')+"</td>"
     else
